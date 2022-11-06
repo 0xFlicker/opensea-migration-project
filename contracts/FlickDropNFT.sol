@@ -5,8 +5,14 @@ import "erc721a/contracts/ERC721A.sol";
 import "erc721a/contracts/extensions/ERC721AQueryable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
+import "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 
-contract FlickDropNFT is ERC721AQueryable, Ownable, ERC2981 {
+contract FlickDropNFT is
+    ERC721AQueryable,
+    Ownable,
+    ERC2981,
+    DefaultOperatorFilterer
+{
     string public m_baseURI;
     bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
 
@@ -47,6 +53,40 @@ contract FlickDropNFT is ERC721AQueryable, Ownable, ERC2981 {
         for (uint256 i = 0; i < _to.length; i++) {
             _mint(_to[i], 1);
         }
+    }
+
+    /**
+     * @dev implements operator-filter-registry blocklist filtering because https://opensea.io/blog/announcements/on-creator-fees/
+     */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public payable override(ERC721A, IERC721A) onlyAllowedOperator {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    /**
+     * @dev implements operator-filter-registry blocklist filtering because https://opensea.io/blog/announcements/on-creator-fees/
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public payable override(ERC721A, IERC721A) onlyAllowedOperator {
+        super.safeTransferFrom(from, to, tokenId);
+    }
+
+    /**
+     * @dev implements operator-filter-registry blocklist filtering because https://opensea.io/blog/announcements/on-creator-fees/
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) public payable override(ERC721A, IERC721A) onlyAllowedOperator {
+        super.safeTransferFrom(from, to, tokenId, data);
     }
 
     function supportsInterface(bytes4 interfaceID)

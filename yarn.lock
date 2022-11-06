@@ -7890,6 +7890,13 @@ open@^7.4.2:
     is-docker "^2.0.0"
     is-wsl "^2.1.1"
 
+operator-filter-registry@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/operator-filter-registry/-/operator-filter-registry-1.0.4.tgz#6b7f7c995368ca1659f921f88fbffc0a78f529f2"
+  integrity sha512-fY3bZIeHlO96WGSVCvtru2uMnwS8pVEhum8oTNCKVfjB0Xch+ECZXSVmYP3sdxVD6g1UbV0T4dMEQ8IHiFXERg==
+  dependencies:
+    "@openzeppelin/contracts" "^4.7.3"
+
 optionator@^0.8.1, optionator@^0.8.2:
   version "0.8.3"
   resolved "https://registry.yarnpkg.com/optionator/-/optionator-0.8.3.tgz#84fa1d036fe9d3c7e21d99884b601167ec8fb495"
