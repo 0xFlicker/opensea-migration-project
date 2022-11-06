@@ -150,7 +150,10 @@ metadataCommands
   .command("opensea-pull")
   .option("-s, --slug <slug>", "collection slug")
   .option("-k, --key <key>", "opensea api key")
-  .action(async ({ slug, key }) => {
+  .action(async ({ slug, key, rpcUrl }) => {
+    const env = { ...process.env, ...dotenv.config().parsed };
+    key = key || env.OPENSEA_API_KEY;
+    const provider = new providers.JsonRpcProvider(rpcUrl);
     await downloadMetadata({ collectionSlug: slug, apiKey: key });
   });
 

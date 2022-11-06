@@ -4,20 +4,58 @@ import { extension } from "mime-types";
 import { Subject, mergeMap, tap } from "rxjs";
 import { IMetadata, IMetadataAttribute } from "../metadata";
 import { retryWithBackoff } from "../retry";
+import { IERC1155__factory } from "../typechain";
+import { any } from "hardhat/internal/core/params/argumentTypes";
+import { providers } from "ethers";
 
 const GET_ASSETS = "https://api.opensea.io/api/v1/assets";
+
+interface OwnerUser {
+  user: {
+    username: string;
+  };
+  profile_img_url: string;
+  address: string;
+  config: string;
+}
 
 interface Owner {
   quantity: string;
   created_date: string;
-  owner: {
-    user: {
-      username: string;
-    };
-    profile_img_url: string;
+  owner: OwnerUser;
+}
+
+interface AssetEvent {
+  asset: CollectionAsset;
+  event_type:
+    | "created"
+    | "successful"
+    | "cancelled"
+    | "bid_entered"
+    | "bid_withdrawn"
+    | "transfer"
+    | "offer_entered"
+    | "approve";
+  created_date: string;
+  listing_date: string;
+  from_account?: OwnerUser;
+  to_account?: OwnerUser;
+  seller?: OwnerUser;
+  is_private: boolean;
+  payment_token: {
+    symbol: "ETH" | "WETH" | "DAI";
     address: string;
-    config: string;
+    image_url: string;
+    name: string;
+    decimals: number;
+    eth_price: string;
+    usd_price: string;
   };
+  quantity: string;
+  total_price: number;
+  collection_slug: string;
+  starting_price: string;
+  ending_price: string;
 }
 
 interface CollectionAsset {
@@ -44,6 +82,7 @@ interface CollectionAsset {
 
 interface IOpenSeaMetadata extends IMetadata {
   owners: Owner[];
+  events: AssetEvent[];
 }
 
 interface OpenSeaPagination {
@@ -53,6 +92,10 @@ interface OpenSeaPagination {
 
 interface GetAssetsResponse extends OpenSeaPagination {
   assets: CollectionAsset[];
+}
+
+interface GetAssetEventsResponse extends OpenSeaPagination {
+  asset_events: AssetEvent[];
 }
 
 interface GetAssetOwnersResponse extends OpenSeaPagination {
@@ -97,11 +140,12 @@ export async function downloadMetadata({
         .asObservable()
         .pipe(
           mergeMap(async (asset) => {
-            const imageUrl = asset.image_original_url
-              ? asset.image_original_url
-              : asset.image_url.startsWith("https://lh3.googleusercontent.com")
-              ? `${asset.image_url}=d`
-              : asset.image_url;
+            let imageUrl = new URL(
+              asset.image_original_url
+                ? asset.image_original_url
+                : asset.image_url
+            );
+
             await fs.promises.mkdir(`./.metadata/${collectionSlug}`, {
               recursive: true,
             });
@@ -111,10 +155,73 @@ export async function downloadMetadata({
               imageUrl,
               imageResponse: await Promise.resolve().then(async () => {
                 return await retryWithBackoff(
-                  () => fetch(imageUrl, {}),
+                  async () => {
+                    imageUrl.search = "";
+                    imageUrl.hostname = "lh3.googleusercontent.com";
+                    imageUrl.pathname = `${imageUrl.pathname.replace(
+                      "/gae/",
+                      "/"
+                    )}=d`;
+                    const imageResponse = await fetch(imageUrl.toString());
+                    if (!imageResponse.ok) {
+                      throw new Error(
+                        `Failed to download image for ${asset.name}: ${imageResponse.status} ${imageResponse.statusText}`
+                      );
+                    }
+                    return imageResponse;
+                  },
                   5,
                   250
                 );
+              }),
+              events: await Promise.resolve().then(async () => {
+                const assetEvents: AssetEvent[] = [];
+                for await (const result of fetchWithPagination<{
+                  asset_events: AssetEvent[];
+                }>(async (next) => {
+                  return retryWithBackoff(
+                    async () => {
+                      const queryParameters = new URLSearchParams({
+                        ...(next ? { cursor: next } : {}),
+                        asset_contract_address: asset.asset_contract.address,
+                        token_id: asset.token_id,
+                      });
+
+                      const response = await fetch(
+                        `https://api.opensea.io/api/v1/events?${queryParameters.toString()}`,
+                        {
+                          headers: {
+                            "X-API-KEY": apiKey,
+                          },
+                        }
+                      );
+                      if (response.status === 429) {
+                        const retryAfter = parseInt(
+                          response.headers.get("retry-after") ?? "0"
+                        );
+                        if (retryAfter > 0) {
+                          console.log(
+                            `Rate limited, retrying in ${retryAfter}s`
+                          );
+                          await new Promise((resolve) =>
+                            setTimeout(resolve, retryAfter * 1000)
+                          );
+                        }
+                        throw new Error("Rate limited");
+                      }
+                      const result = await response.json();
+                      return result as GetAssetEventsResponse;
+                    },
+                    5,
+                    250
+                  );
+                })) {
+                  for (const assetEvent of result.asset_events ?? []) {
+                    delete assetEvent.asset;
+                    assetEvents.push(assetEvent);
+                  }
+                }
+                return assetEvents;
               }),
               owners: await Promise.resolve().then(async () => {
                 const owners: Owner[] = [];
@@ -122,7 +229,6 @@ export async function downloadMetadata({
                   owners: Owner[];
                 }>(async (next) => {
                   const queryParameters = new URLSearchParams({
-                    order_direction: "asc",
                     ...(next ? { cursor: next } : {}),
                   });
 
@@ -158,7 +264,7 @@ export async function downloadMetadata({
               }),
             };
           }, 1),
-          tap(async ({ asset, imageResponse, imageUrl, owners }) => {
+          tap(async ({ asset, imageResponse, events, owners }) => {
             console.log(`Writing image for ${asset.name}`);
             const image = Buffer.from(await imageResponse.arrayBuffer());
             const imageFile = `${asset.token_id}.${extension(
@@ -175,6 +281,7 @@ export async function downloadMetadata({
               image: `./${imageFile}`,
               attributes: asset.traits,
               owners: owners,
+              events: events,
             };
             await fs.promises.writeFile(
               `./.metadata/${asset.collection.slug}/${asset.token_id}.json`,
@@ -197,8 +304,7 @@ export async function downloadMetadata({
 
   for await (const batchAssets of fetchWithPagination(async (next) => {
     const queryParameters = new URLSearchParams({
-      collection_slug: collectionSlug,
-      order_direction: "asc",
+      collection: collectionSlug,
       ...(next ? { cursor: next } : {}),
     });
 
@@ -221,6 +327,7 @@ export async function downloadMetadata({
 
     return (await response.json()) as GetAssetsResponse;
   })) {
+    console.log(JSON.stringify(batchAssets, null, 2));
     for (const asset of batchAssets.assets ?? []) {
       console.log(`Processing ${asset.name}`);
       incomingAssets.next(asset);

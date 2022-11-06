@@ -1,6 +1,5 @@
 import { IPFSHTTPClient, globSource } from "ipfs-http-client";
 import fs from "fs";
-import cliProgress from "cli-progress";
 import glob from "it-glob";
 import { resolve as pathResolve, basename, extname } from "path";
 
@@ -21,29 +20,6 @@ export async function ipfsPin({
   ipfsClient: IPFSHTTPClient;
   localFolder: string;
 }) {
-  // const multibar = new cliProgress.MultiBar(
-  //   {
-  //     clearOnComplete: false,
-  //     hideCursor: true,
-  //   },
-  //   cliProgress.Presets.shades_classic
-  // );
-  // const imageSizes = await countGlobFiles(localFolder, "**/!(*.json)");
-  // const ipfsSingleFileProgressBar = multibar.create(
-  //   0,
-  //   0,
-  //   {
-  //     filename: "".repeat(20),
-  //   },
-  //   {
-  //     format:
-  //       "{filename} [{bar}] {percentage}% | ETA: {eta}s | {value}/{total}",
-  //   }
-  // );
-  // const ipfsImageUpload = multibar.create(imageSizes.size, 0);
-  // // First pin all not-json files
-  // const seenFiles = new Set<string>();
-  // // First create localFolder on IPFS
   const imageRoot = `/${basename(localFolder)}/images`;
   console.log(`Creating ${imageRoot} on IPFS`);
   await ipfsClient.files.mkdir(imageRoot, {
