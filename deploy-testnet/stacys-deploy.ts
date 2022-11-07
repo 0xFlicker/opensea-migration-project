@@ -6,11 +6,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy("Stacys_V2", {
+  await deploy("StacysV2", {
     from: deployer,
     args: [
       "0x58666BD033D3e1d3e0add72beA53C3e771C9c743",
-      "ipfs://QmXuMgTPJnh6TMsgEeUCpF5uWA9FZ2rFCqCLUiRCKPEFoj/",
+      "ipfs://QmTEPbZn4inWihuVsM1H1CVJCGdojRCWjPSBU6LrnBm5vb/",
     ],
     log: true,
     waitConfirmations: 5,

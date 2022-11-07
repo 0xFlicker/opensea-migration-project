@@ -2,88 +2,14 @@ import fetch from "node-fetch";
 import fs from "fs";
 import { extension } from "mime-types";
 import { Subject, mergeMap, tap } from "rxjs";
-import { IMetadata, IMetadataAttribute } from "../metadata";
+import {
+  AssetEvent,
+  CollectionAsset,
+  IOpenSeaMetadata,
+  Owner,
+} from "../metadata";
 import { retryWithBackoff } from "../retry";
-import { IERC1155__factory } from "../typechain";
-import { any } from "hardhat/internal/core/params/argumentTypes";
-import { providers } from "ethers";
-
 const GET_ASSETS = "https://api.opensea.io/api/v1/assets";
-
-interface OwnerUser {
-  user: {
-    username: string;
-  };
-  profile_img_url: string;
-  address: string;
-  config: string;
-}
-
-interface Owner {
-  quantity: string;
-  created_date: string;
-  owner: OwnerUser;
-}
-
-interface AssetEvent {
-  asset: CollectionAsset;
-  event_type:
-    | "created"
-    | "successful"
-    | "cancelled"
-    | "bid_entered"
-    | "bid_withdrawn"
-    | "transfer"
-    | "offer_entered"
-    | "approve";
-  created_date: string;
-  listing_date: string;
-  from_account?: OwnerUser;
-  to_account?: OwnerUser;
-  seller?: OwnerUser;
-  is_private: boolean;
-  payment_token: {
-    symbol: "ETH" | "WETH" | "DAI";
-    address: string;
-    image_url: string;
-    name: string;
-    decimals: number;
-    eth_price: string;
-    usd_price: string;
-  };
-  quantity: string;
-  total_price: number;
-  collection_slug: string;
-  starting_price: string;
-  ending_price: string;
-}
-
-interface CollectionAsset {
-  id: number;
-  slug: string;
-  token_id: string;
-  num_sales: number;
-  image_url: string;
-  image_original_url: string;
-  name: string;
-  description: string;
-  permalink: string;
-  traits: IMetadataAttribute[];
-  asset_contract: {
-    address: string;
-  };
-  collection: {
-    created_date: string;
-    description: string;
-    name: string;
-    slug: string;
-  };
-}
-
-interface IOpenSeaMetadata extends IMetadata {
-  owners: Owner[];
-  events: AssetEvent[];
-}
 
 interface OpenSeaPagination {
   next?: string;

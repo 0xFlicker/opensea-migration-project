@@ -8,7 +8,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const contractDeployment = await deployments.get("Stacys_V2");
+  const contractDeployment = await deployments.get("StacysV2");
 
   const count = 148;
   // Pick 148 random addresses

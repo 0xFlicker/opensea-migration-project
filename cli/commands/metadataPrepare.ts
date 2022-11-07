@@ -1,7 +1,7 @@
 import fs from "fs";
 import { resolve as pathResolve, basename, extname } from "path";
 import { GiphyFetch } from "@giphy/js-fetch-api";
-import { IOpenSeaMetadata, Owner } from "../metadata";
+import { AssetEvent, IOpenSeaMetadata, Owner } from "../metadata";
 import { retryWithBackoff } from "../retry";
 
 async function* randomGif(giphyApiKey: string, searchTerm: string) {
@@ -32,6 +32,16 @@ async function* randomGif(giphyApiKey: string, searchTerm: string) {
   } while (true);
 }
 
+const oldestOwnerReducer = (
+  prev: AssetEvent | undefined,
+  current: AssetEvent
+) => {
+  if (prev === undefined) {
+    return current;
+  }
+  return prev.created_date < current.created_date ? prev : current;
+};
+
 export async function prepareMetadata({
   giphyApiKey,
   giphySearchTerm,
@@ -61,16 +71,19 @@ export async function prepareMetadata({
     );
     metadataJson.push(metadata);
   }
-  // Sort each file by the last owner's creation date, which is when the token was created
+  // Sort each file by the last asset event date, which is when the token was created
   metadataJson.sort((a, b) => {
-    const oldestOwnerReducer = (prev: Owner | undefined, current: Owner) => {
-      if (prev === undefined) {
-        return current;
-      }
-      return prev.created_date < current.created_date ? prev : current;
-    };
-    const aOwner = a.owners.reduce(oldestOwnerReducer);
-    const bOwner = b.owners.reduce(oldestOwnerReducer);
+    const aOwner: AssetEvent | undefined = (a.events ?? []).reduce(
+      oldestOwnerReducer,
+      undefined
+    );
+    const bOwner: AssetEvent | undefined = (b.events ?? []).reduce(
+      oldestOwnerReducer,
+      undefined
+    );
+    if (aOwner === undefined || bOwner === undefined) {
+      return 0;
+    }
     return aOwner.created_date < bOwner.created_date ? -1 : 1;
   });
   // Rename each file to the new token ID which is the order of when the token was created
@@ -82,6 +95,10 @@ export async function prepareMetadata({
   for (let i = 0; i < metadataJson.length; i++) {
     console.log(`Processing ${i + 1} of ${metadataJson.length}`);
     const metadata = metadataJson[i];
+    // Find oldest event...
+    const oldestEvent = metadata.events?.reduce(oldestOwnerReducer);
+    // console.log(`Oldest event: ${JSON.stringify(oldestEvent, null, 2)}`);
+    // process.exit(1);
     if (gifIterator) {
       const gifImageName = `${i + 1}.gif`;
 
@@ -110,8 +127,9 @@ export async function prepareMetadata({
             gifImageBuffer
           );
         }
+
+        metadata.image = gifImageName;
       }
-      metadata.image = gifImageName;
     } else {
       // Copy over the image
       const image = metadata.image;
@@ -124,6 +142,22 @@ export async function prepareMetadata({
       );
     }
 
+    //Create a creation date string using a locale formatter
+    const creationDate = oldestEvent
+      ? new Date(oldestEvent.created_date)
+      : undefined;
+
+    const localeCreationDate = creationDate?.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    metadata.original_creation_date = creationDate?.toISOString();
+    metadata.description = localeCreationDate
+      ? `${metadata.description}
+
+This NFT was originally created on the OpenSea Storefront on ${localeCreationDate}.`
+      : metadata.description;
     const tokenId = i + 1;
     const newFileName = `${tokenId}.json`;
     await fs.promises.writeFile(

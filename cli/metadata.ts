@@ -30,21 +30,80 @@ export interface IMetadata {
   id?: string | number;
 }
 
+export interface OwnerUser {
+  user: {
+    username: string;
+  };
+  profile_img_url: string;
+  address: string;
+  config: string;
+}
+
 export interface Owner {
   quantity: string;
   created_date: string;
-  owner: {
-    user: {
-      username: string;
-    };
-    profile_img_url: string;
+  owner: OwnerUser;
+}
+
+export interface AssetEvent {
+  asset: CollectionAsset;
+  event_type:
+    | "created"
+    | "successful"
+    | "cancelled"
+    | "bid_entered"
+    | "bid_withdrawn"
+    | "transfer"
+    | "offer_entered"
+    | "approve";
+  created_date: string;
+  listing_date: string;
+  from_account?: OwnerUser;
+  to_account?: OwnerUser;
+  seller?: OwnerUser;
+  is_private: boolean;
+  payment_token: {
+    symbol: "ETH" | "WETH" | "DAI";
     address: string;
-    config: string;
+    image_url: string;
+    name: string;
+    decimals: number;
+    eth_price: string;
+    usd_price: string;
+  };
+  quantity: string;
+  total_price: number;
+  collection_slug: string;
+  starting_price: string;
+  ending_price: string;
+}
+
+export interface CollectionAsset {
+  id: number;
+  slug: string;
+  token_id: string;
+  num_sales: number;
+  image_url: string;
+  image_original_url: string;
+  name: string;
+  description: string;
+  permalink: string;
+  traits: IMetadataAttribute[];
+  asset_contract: {
+    address: string;
+  };
+  collection: {
+    created_date: string;
+    description: string;
+    name: string;
+    slug: string;
   };
 }
 
 export interface IOpenSeaMetadata extends IMetadata {
-  owners: Owner[];
+  owners?: Owner[];
+  events?: AssetEvent[];
+  original_creation_date?: string;
 }
 
 export async function extractMetadata(
