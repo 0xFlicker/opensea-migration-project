@@ -1,6 +1,8 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
+import fs from "fs";
 import { utils } from "ethers";
+import { parse } from "csv-parse";
 import { FlickDropNFT__factory } from "../typechain";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -12,8 +14,25 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const count = 11;
   const addresses: string[] = [];
-  for (let i = 0; i < count; i++) {
-    addresses.push(utils.getAddress(utils.hexlify(utils.randomBytes(20))));
+  const holders = await fs.promises.readFile(
+    "../cli/.metadata/golden-hunny-ticket-airdrop.csv",
+    "utf8"
+  );
+  const record = new Promise<[string, string][]>((resolve, reject) =>
+    parse(holders, { delimiter: "," }, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    })
+  );
+  const [_, ...rows] = await record;
+  for (const [_, address] of rows) {
+    addresses.push(address);
+  }
+  if (addresses.length !== count) {
+    throw new Error(`Expected ${count} addresses, got ${addresses.length}`);
   }
   console.log(`Bulk minting to ${addresses.length} addresses`);
   const signer = await ethers.getSigner(deployer);
