@@ -5,10 +5,12 @@ import { Subject, mergeMap, tap } from "rxjs";
 import {
   AssetEvent,
   CollectionAsset,
+  IMetadata,
   IOpenSeaMetadata,
   Owner,
 } from "../metadata";
 import { retryWithBackoff } from "../retry";
+import { providers } from "ethers";
 const GET_ASSETS = "https://api.opensea.io/api/v1/assets";
 
 interface OpenSeaPagination {
@@ -47,6 +49,78 @@ async function* fetchWithPagination<T>(
       break;
     }
     next = result.next;
+  }
+}
+
+export async function fetchSpecificAssets({
+  collectionAddress,
+  collectionSlug,
+  tokenIds,
+}: {
+  collectionAddress: string;
+  collectionSlug: string;
+  tokenIds: string[];
+}) {
+  const incomingAssets = new Subject<string>();
+  await fs.promises.mkdir(`./.metadata/${collectionSlug}`, { recursive: true });
+  const finished = new Promise<void>((resolve, reject) =>
+    incomingAssets
+      .asObservable()
+      .pipe(
+        mergeMap(async (tokenId) => {
+          const metadataResponse = await retryWithBackoff(
+            () =>
+              fetch(
+                `https://api.opensea.io/api/v2/metadata/matic/${collectionAddress}/${tokenId}`
+              ),
+            5,
+            250
+          );
+          const metadata = (await metadataResponse.json()) as IMetadata;
+          const imageUrl = new URL(metadata.image);
+          imageUrl.search = "";
+          imageUrl.hostname = "lh3.googleusercontent.com";
+          imageUrl.pathname = `${imageUrl.pathname.replace("/gae/", "/")}=d`;
+          const imageResponse = await retryWithBackoff(
+            async () => fetch(imageUrl.toString()),
+            5,
+            250
+          );
+
+          const imageExtension = extension(
+            imageResponse.headers.get("content-type") || "image/png"
+          );
+
+          const imageBuffer = await imageResponse.arrayBuffer();
+
+          console.log(`Writing image for ${metadata.name}`);
+          const image = Buffer.from(imageBuffer);
+          const imageFile = `${tokenId}.${imageExtension}`;
+          await fs.promises.writeFile(
+            `./.metadata/${collectionSlug}/${imageFile}`,
+            image
+          );
+          console.log(`Writing metadata for ${metadata.name}`);
+          await fs.promises.writeFile(
+            `./.metadata/${collectionSlug}/${tokenId}.json`,
+            JSON.stringify(metadata, null, 2),
+            "utf8"
+          );
+        }, 6)
+      )
+      .subscribe({
+        complete: resolve,
+        error: reject,
+      })
+  );
+  for (const tokenId of tokenIds) {
+    incomingAssets.next(tokenId);
+  }
+  incomingAssets.complete();
+  try {
+    await finished;
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -253,7 +327,6 @@ export async function downloadMetadata({
 
     return (await response.json()) as GetAssetsResponse;
   })) {
-    console.log(JSON.stringify(batchAssets, null, 2));
     for (const asset of batchAssets.assets ?? []) {
       console.log(`Processing ${asset.name}`);
       incomingAssets.next(asset);

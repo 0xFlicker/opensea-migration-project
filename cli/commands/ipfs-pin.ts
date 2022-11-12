@@ -30,7 +30,7 @@ export async function ipfsPin({
     if (fileSource.content) {
       const imageFileName = fileSource.path;
       fileNames.set(basename(fileSource.path), imageFileName.split("/")[1]);
-      console.log(`Uploading ${imageFileName} to ${imageRoot}${imageFileName}`);
+      // console.log(`Uploading ${imageFileName} to ${imageRoot}${imageFileName}`);
       await ipfsClient.files.write(
         `${imageRoot}${imageFileName}`,
         fileSource.content,
@@ -51,7 +51,7 @@ export async function ipfsPin({
     parents: true,
   });
   for await (const file of glob(localFolder, "**/*.json")) {
-    console.log(`Uploading ${file}`);
+    // console.log(`Uploading ${file}`);
     const metadata = JSON.parse(
       await fs.promises.readFile(pathResolve(localFolder, file), "utf8")
     );

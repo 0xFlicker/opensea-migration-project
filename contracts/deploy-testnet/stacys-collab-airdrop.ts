@@ -8,10 +8,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const contractDeployment = await deployments.get("StacysV2");
+  const contractDeployment = await deployments.get("StacysCollab_V2");
 
-  const count = 148;
-  // Pick 148 random addresses
+  const count = 7;
   const addresses: string[] = [];
   for (let i = 0; i < count; i++) {
     addresses.push(utils.getAddress(utils.hexlify(utils.randomBytes(20))));
@@ -22,8 +21,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     contractDeployment.address,
     signer
   );
-  const tx = await contract.bulkMint(addresses);
+  // get current base gas price
+  const { maxFeePerGas, maxPriorityFeePerGas } =
+    await ethers.provider.getFeeData();
+
+  const tx = await contract.bulkMint(addresses, {
+    type: 2,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+  });
+  console.log(`Tx hash: ${tx.hash}`);
   await tx.wait();
 };
 export default func;
-func.tags = ["stacys:airdrop"];
+func.tags = ["stacys-collab:airdrop", "airdrop"];

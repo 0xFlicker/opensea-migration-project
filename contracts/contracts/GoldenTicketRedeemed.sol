@@ -7,7 +7,12 @@ contract GoldenTicketRedeemed is FlickDropNFT {
     address public goldenTicketAddress;
 
     constructor(address feeReceiver, string memory baseURI)
-        FlickDropNFT("GoldenTicket", "GOLDTICKET", feeReceiver, 500)
+        FlickDropNFT(
+            "Golden Hunny Ticket (Redeemed)",
+            "GOLDENTICKET-REDEEMED",
+            feeReceiver,
+            500
+        )
     {
         setBaseURI(baseURI);
     }

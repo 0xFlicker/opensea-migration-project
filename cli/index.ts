@@ -7,7 +7,7 @@ import { airdrop as airdropCommand } from "./commands/airdrop";
 import { providers, Wallet } from "ethers";
 import { IERC721A__factory } from "./typechain";
 import { ownersOfTrait } from "./commands/ownersOfTrait";
-import { downloadMetadata } from "./commands/opensea";
+import { downloadMetadata, fetchSpecificAssets } from "./commands/opensea";
 import fetch from "node-fetch";
 import { ipfsPin } from "./commands/ipfs-pin";
 
@@ -104,17 +104,31 @@ metadataCommands
   .option("-a, --giphy-api-key <giphyApiKey>", "giphy api key")
   .option("-s, --giphy-search-term <giphySearchTerm>", "giphy search term")
   .option("-t, --testnet", "testnet (use giphy random images")
-  .action(async ({ inDir, outDir, giphyApiKey, giphySearchTerm, testnet }) => {
-    const env = { ...process.env, ...dotenv.config().parsed };
-    giphyApiKey = giphyApiKey || env.GIPHY_API_KEY;
-    await prepareMetadata({
+  .option("-h, --hunnys", "Custom hunny attribute")
+  .option("-m, --mint-attribute", "Add original mint date attribute")
+  .action(
+    async ({
       inDir,
       outDir,
       giphyApiKey,
       giphySearchTerm,
-      testImages: testnet,
-    });
-  });
+      testnet,
+      hunnys,
+      mintAttribute,
+    }) => {
+      const env = { ...process.env, ...dotenv.config().parsed };
+      giphyApiKey = giphyApiKey || env.GIPHY_API_KEY;
+      await prepareMetadata({
+        inDir,
+        outDir,
+        giphyApiKey,
+        giphySearchTerm,
+        testImages: testnet,
+        hunnys,
+        mintAttribute,
+      });
+    }
+  );
 
 program
   .command("owners-of")
@@ -150,11 +164,20 @@ metadataCommands
   .command("opensea-pull")
   .option("-s, --slug <slug>", "collection slug")
   .option("-k, --key <key>", "opensea api key")
-  .action(async ({ slug, key, rpcUrl }) => {
+  .option("-c, --contract <contract>", "contract address")
+  .option("-t, --token-ids <tokenIds>", "token ids")
+  .action(async ({ slug, key, contract, tokenIds }) => {
     const env = { ...process.env, ...dotenv.config().parsed };
     key = key || env.OPENSEA_API_KEY;
-    const provider = new providers.JsonRpcProvider(rpcUrl);
-    await downloadMetadata({ collectionSlug: slug, apiKey: key });
+    if (contract && tokenIds) {
+      await fetchSpecificAssets({
+        collectionAddress: contract,
+        tokenIds: tokenIds.split(","),
+        collectionSlug: slug,
+      });
+    } else {
+      await downloadMetadata({ collectionSlug: slug, apiKey: key });
+    }
   });
 
 const ipfsCommands = program.command("ipfs");

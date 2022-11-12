@@ -48,7 +48,7 @@ import "./FlickDropNFT.sol";
 
 contract HunnysOGS_V2 is FlickDropNFT {
     constructor(address feeReceiver, string memory baseURI)
-        FlickDropNFT("Stacys", "STACYS", feeReceiver, 500)
+        FlickDropNFT("Hunnys OGs", "HUNNYS-OGS", feeReceiver, 500)
     {
         setBaseURI(baseURI);
     }

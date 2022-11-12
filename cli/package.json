@@ -1,0 +1,33 @@
+{
+  "name": "onchain-gas",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.0",
+    "@types/mime-types": "^2.1.1",
+    "@types/node": "^18.8.3",
+    "dotenv": "^16.0.3",
+    "esbuild": "^0.15.12",
+    "ethers": "^5.7.1",
+    "prettier": "^2.7.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@giphy/js-fetch-api": "^4.4.0",
+    "cli-progress": "^3.11.2",
+    "commander": "^9.4.1",
+    "csv-parse": "^5.3.1",
+    "ipfs-http-client": "^59.0.0",
+    "it-glob": "^2.0.0",
+    "mime-types": "^2.1.35",
+    "node-fetch": "^3.2.10",
+    "rxjs": "^7.5.7"
+  },
+  "scripts": {
+    "build:cli": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
+    "build:cli:silent": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
+    "cli": "yarn -s build:cli:silent && node dist/cli.mjs"
+  }
+}

@@ -46,7 +46,7 @@ KKKKKKKKKK00OOOOOOOOOOOOocd0XXXKKKXXKKXXXXKKXXXKKXXX0dcd0KKKKKKKKKKKKKKKKKKKKKKK
 
 import "./FlickDropNFT.sol";
 
-contract StacysV2 is FlickDropNFT {
+contract Stacys_V2 is FlickDropNFT {
     constructor(address feeReceiver, string memory baseURI)
         FlickDropNFT("Stacys", "STACYS", feeReceiver, 500)
     {

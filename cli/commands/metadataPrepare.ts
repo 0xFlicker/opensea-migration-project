@@ -3,6 +3,7 @@ import { resolve as pathResolve, basename, extname } from "path";
 import { GiphyFetch } from "@giphy/js-fetch-api";
 import { AssetEvent, IOpenSeaMetadata, Owner } from "../metadata";
 import { retryWithBackoff } from "../retry";
+import { BigNumber } from "ethers";
 
 async function* randomGif(giphyApiKey: string, searchTerm: string) {
   const gf = new GiphyFetch(giphyApiKey);
@@ -48,12 +49,16 @@ export async function prepareMetadata({
   inDir,
   outDir,
   testImages,
+  hunnys,
+  mintAttribute,
 }: {
   giphyApiKey?: string;
   giphySearchTerm?: string;
   inDir: string;
   outDir: string;
   testImages?: boolean;
+  hunnys?: boolean;
+  mintAttribute?: boolean;
 }) {
   await fs.promises.mkdir(outDir, { recursive: true });
   // Iterate over all JSON files in a directory.
@@ -65,27 +70,17 @@ export async function prepareMetadata({
   }
   // For each file, read the contents and parse the JSON.
   const metadataJson: IOpenSeaMetadata[] = [];
-  for (const file of filesToParse) {
+  for (const file of filesToParse.sort((a, b) =>
+    BigNumber.from(basename(a, ".json"))
+      .sub(BigNumber.from(basename(b, ".json")))
+      .toNumber()
+  )) {
     const metadata = JSON.parse(
       await fs.promises.readFile(`${inDir}/${file}`, "utf8")
     );
     metadataJson.push(metadata);
   }
-  // Sort each file by the last asset event date, which is when the token was created
-  metadataJson.sort((a, b) => {
-    const aOwner: AssetEvent | undefined = (a.events ?? []).reduce(
-      oldestOwnerReducer,
-      undefined
-    );
-    const bOwner: AssetEvent | undefined = (b.events ?? []).reduce(
-      oldestOwnerReducer,
-      undefined
-    );
-    if (aOwner === undefined || bOwner === undefined) {
-      return 0;
-    }
-    return aOwner.created_date < bOwner.created_date ? -1 : 1;
-  });
+
   // Rename each file to the new token ID which is the order of when the token was created
   const gifIterator =
     testImages && giphyApiKey
@@ -97,8 +92,7 @@ export async function prepareMetadata({
     const metadata = metadataJson[i];
     // Find oldest event...
     const oldestEvent = metadata.events?.reduce(oldestOwnerReducer);
-    // console.log(`Oldest event: ${JSON.stringify(oldestEvent, null, 2)}`);
-    // process.exit(1);
+
     if (gifIterator) {
       const gifImageName = `${i + 1}.gif`;
 
@@ -152,6 +146,29 @@ export async function prepareMetadata({
       month: "long",
       day: "numeric",
     });
+
+    // Some final custom metadata
+    if (hunnys) {
+      if (metadata.name.includes("Hunny #")) {
+        metadata.attributes?.push({
+          trait_type: "Type",
+          value: "Classic",
+        });
+      } else {
+        metadata.attributes?.push({
+          trait_type: "Type",
+          value: "Named",
+        });
+      }
+    }
+
+    if (mintAttribute && localeCreationDate) {
+      metadata.attributes?.push({
+        trait_type: "Original Mint Date",
+        value: localeCreationDate,
+      });
+    }
+
     metadata.original_creation_date = creationDate?.toISOString();
     metadata.description = localeCreationDate
       ? `${metadata.description}
