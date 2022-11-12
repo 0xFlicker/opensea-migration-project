@@ -168,14 +168,15 @@ export async function prepareMetadata({
         value: localeCreationDate,
       });
     }
-
+    const tokenId = i + 1;
+    metadata.id = String(tokenId);
     metadata.original_creation_date = creationDate?.toISOString();
     metadata.description = localeCreationDate
       ? `${metadata.description}
 
 This NFT was originally created on the OpenSea Storefront on ${localeCreationDate}.`
       : metadata.description;
-    const tokenId = i + 1;
+
     const newFileName = `${tokenId}.json`;
     await fs.promises.writeFile(
       `${outDir}/${newFileName}`,

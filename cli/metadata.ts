@@ -21,7 +21,6 @@ export type IMetadataAttribute = IAttributeString | IAttributeNumeric;
 export interface IMetadata {
   image: string;
   description?: string;
-  tokenId?: string;
   external_url?: string;
   name: string;
   attributes?: IMetadataAttribute[];
@@ -104,6 +103,8 @@ export interface IOpenSeaMetadata extends IMetadata {
   owners?: Owner[];
   events?: AssetEvent[];
   original_creation_date?: string;
+  original_contract_address?: string;
+  original_token_id?: string;
 }
 
 export async function extractMetadata(

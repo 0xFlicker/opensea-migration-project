@@ -7,7 +7,11 @@ import { airdrop as airdropCommand } from "./commands/airdrop";
 import { providers, Wallet } from "ethers";
 import { IERC721A__factory } from "./typechain";
 import { ownersOfTrait } from "./commands/ownersOfTrait";
-import { downloadMetadata, fetchSpecificAssets } from "./commands/opensea";
+import {
+  downloadMetadata,
+  fetchSpecificAssets,
+  generateOpenseaAirdropListFromMetadata,
+} from "./commands/opensea";
 import fetch from "node-fetch";
 import { ipfsPin } from "./commands/ipfs-pin";
 
@@ -96,6 +100,17 @@ metadataCommands
       });
     }
   );
+
+metadataCommands
+  .command("owners-of")
+  .option("-s, --slug <slug>", "collection slug")
+  .option("-o, --out <out>", "output cxsv file")
+  .action(async ({ slug, out }) => {
+    await generateOpenseaAirdropListFromMetadata({
+      collectionSlug: slug,
+      outputCsv: out,
+    });
+  });
 
 metadataCommands
   .command("prepare")

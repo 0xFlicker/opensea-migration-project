@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import fs from "fs";
+import { stringify } from "csv-stringify";
 import { extension } from "mime-types";
 import { Subject, mergeMap, tap } from "rxjs";
 import {
@@ -10,7 +11,7 @@ import {
   Owner,
 } from "../metadata";
 import { retryWithBackoff } from "../retry";
-import { providers } from "ethers";
+
 const GET_ASSETS = "https://api.opensea.io/api/v1/assets";
 
 interface OpenSeaPagination {
@@ -275,10 +276,15 @@ export async function downloadMetadata({
               image
             );
             console.log(`Writing metadata for ${asset.name}`);
+
+            const originalContractAddress = asset.asset_contract.address;
+            const originalTokenId = asset.token_id;
             const metadata: IOpenSeaMetadata = {
               name: asset.name,
               description: asset.description,
               image: `./${imageFile}`,
+              original_contract_address: originalContractAddress,
+              original_token_id: originalTokenId,
               attributes: asset.traits,
               owners: owners,
               events: events,
@@ -339,4 +345,66 @@ export async function downloadMetadata({
   } catch (err) {
     console.error(err);
   }
+}
+
+export async function generateOpenseaAirdropListFromMetadata({
+  collectionSlug,
+  outputCsv,
+}: {
+  collectionSlug: string;
+  outputCsv: string;
+}) {
+  const metadataDir = `./.metadata/${collectionSlug}`;
+  const metadataFiles = (await fs.promises.readdir(metadataDir)).filter(
+    (file) => file.endsWith(".json")
+  );
+  const metadatas: IOpenSeaMetadata[] = [];
+  for (let i = 0; i < metadataFiles.length; i += 10) {
+    const batch = metadataFiles.slice(i, i + 10);
+    metadatas.push(
+      ...(await Promise.all(
+        batch.map(
+          async (metadataFile) =>
+            JSON.parse(
+              await fs.promises.readFile(
+                `${metadataDir}/${metadataFile}`,
+                "utf8"
+              )
+            ) as IOpenSeaMetadata
+        )
+      ))
+    );
+  }
+  const data: [string, string][] = [];
+  for (const metadata of metadatas) {
+    if (!metadata.id) {
+      throw new Error(`Token ID undefined for ${metadata.name}`);
+    }
+    if (!metadata.owners) {
+      throw new Error(`Owners undefined for ${metadata.name}`);
+    }
+    if (metadata.owners.length === 0) {
+      throw new Error(`No owners for ${metadata.name}`);
+    }
+    const owner = metadata.owners[metadata.owners.length - 1];
+    data.push([String(metadata.id), owner.owner.address]);
+  }
+  data.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+  const result = await new Promise<string>((resolve, reject) =>
+    stringify(
+      data,
+      {
+        header: true,
+        columns: ["tokenId", "ownerOf"],
+      },
+      (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      }
+    )
+  );
+  await fs.promises.writeFile(outputCsv, result, "utf8");
 }
