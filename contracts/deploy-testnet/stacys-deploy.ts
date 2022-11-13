@@ -10,7 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     args: [
       "0x58666BD033D3e1d3e0add72beA53C3e771C9c743",
-      "ipfs://QmbszkX2dLnve4aEbEAWxak8XE6X6TPpmc9SGBJDU8FCUC/",
+      "ipfs://QmUibkpcx9bxNNuZ7Qr9wNau76MCeibLueKo2zgJBEb1Mu/",
     ],
     log: true,
     waitConfirmations: 5,

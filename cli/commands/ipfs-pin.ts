@@ -22,20 +22,31 @@ export async function ipfsPin({
 }) {
   const imageRoot = `/${basename(localFolder)}/images`;
   console.log(`Creating ${imageRoot} on IPFS`);
-  await ipfsClient.files.mkdir(imageRoot, {
-    parents: true,
-  });
+  // await ipfsClient.files.mkdir(imageRoot, {
+  //   parents: true,
+  // });
   const fileNames = new Map<string, string>();
   for await (const fileSource of globSource(localFolder, "**/!(*.json)")) {
     if (fileSource.content) {
       const imageFileName = fileSource.path;
       fileNames.set(basename(fileSource.path), imageFileName.split("/")[1]);
+
+      // First delete the file if it exists
+      try {
+        await ipfsClient.files.rm(`${imageRoot}/${imageFileName}`, {
+          recursive: true,
+        });
+      } catch (e) {
+        // Ignore
+      }
+
       // console.log(`Uploading ${imageFileName} to ${imageRoot}${imageFileName}`);
       await ipfsClient.files.write(
         `${imageRoot}${imageFileName}`,
         fileSource.content,
         {
           create: true,
+          parents: true,
         }
       );
     }
@@ -61,11 +72,24 @@ export async function ipfsPin({
     }
     metadata.image = `${imageIpfsRoot}/${image}`;
 
+    // First delete the file if it exists
+    try {
+      await ipfsClient.files.rm(
+        `${metadataRoot}/${basename(file, extname(file))}`,
+        {
+          recursive: true,
+        }
+      );
+    } catch (e) {
+      // Ignore
+    }
+
     await ipfsClient.files.write(
       `${metadataRoot}/${basename(file, extname(file))}`,
       JSON.stringify(metadata, null, 2),
       {
         create: true,
+        parents: true,
       }
     );
   }
