@@ -60,7 +60,8 @@ export async function prepareMetadata({
   hunnys?: boolean;
   mintAttribute?: boolean;
 }) {
-  await fs.promises.mkdir(outDir, { recursive: true });
+  await fs.promises.mkdir(pathResolve(outDir, "assets"), { recursive: true });
+  await fs.promises.mkdir(pathResolve(outDir, "metadata"), { recursive: true });
   // Iterate over all JSON files in a directory.
   const filesToParse: string[] = [];
   for await (const dirEntry of await fs.promises.opendir(inDir)) {
@@ -117,7 +118,7 @@ export async function prepareMetadata({
           );
 
           await fs.promises.writeFile(
-            `${outDir}/${gifImageName}`,
+            `${outDir}/assets/${gifImageName}`,
             gifImageBuffer
           );
         }
@@ -132,7 +133,7 @@ export async function prepareMetadata({
       metadata.image = newImageFileName;
       await fs.promises.copyFile(
         pathResolve(inDir, image),
-        pathResolve(outDir, newImageFileName)
+        pathResolve(outDir, "assets", newImageFileName)
       );
     }
 
@@ -179,7 +180,7 @@ This NFT was originally created on the OpenSea Storefront on ${localeCreationDat
 
     const newFileName = `${tokenId}.json`;
     await fs.promises.writeFile(
-      `${outDir}/${newFileName}`,
+      `${outDir}/metadata/${newFileName}`,
       JSON.stringify(metadata, null, 2),
       "utf8"
     );

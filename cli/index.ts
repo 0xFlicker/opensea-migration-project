@@ -204,27 +204,31 @@ ipfsCommands
     "ipfs project id"
   )
   .option("--infura-ipfs-secret <infura-ipfs-secret>", "ipfs secret")
-  .action(async (inFolder, { ipfs, infuraIpfsProjectId, infuraIpfsSecret }) => {
-    let ipfsBasicAuth: string | null = null;
-    if (infuraIpfsProjectId && infuraIpfsSecret) {
-      ipfsBasicAuth = `Basic ${Buffer.from(
-        `${infuraIpfsProjectId}:${infuraIpfsSecret}`
-      ).toString("base64")}`;
-    }
-    const ipfsUrl = new URL(ipfs || "https://ipfs.infura.io:5001");
-    const ipfsClient = createIpfsHttpClient({
-      host: ipfsUrl.hostname,
-      protocol: ipfsUrl.protocol.replace(":", ""),
-      port: Number(ipfsUrl.port),
-      ...(ipfsBasicAuth ? { headers: { authorization: ipfsBasicAuth } } : {}),
-    });
-    try {
-      await ipfsPin({
-        ipfsClient,
-        localFolder: inFolder,
+  .option("--pin", "pin metadata")
+  .action(
+    async (inFolder, { ipfs, infuraIpfsProjectId, infuraIpfsSecret, pin }) => {
+      let ipfsBasicAuth: string | null = null;
+      if (infuraIpfsProjectId && infuraIpfsSecret) {
+        ipfsBasicAuth = `Basic ${Buffer.from(
+          `${infuraIpfsProjectId}:${infuraIpfsSecret}`
+        ).toString("base64")}`;
+      }
+      const ipfsUrl = new URL(ipfs || "https://ipfs.infura.io:5001");
+      const ipfsClient = createIpfsHttpClient({
+        host: ipfsUrl.hostname,
+        protocol: ipfsUrl.protocol.replace(":", ""),
+        port: Number(ipfsUrl.port),
+        ...(ipfsBasicAuth ? { headers: { authorization: ipfsBasicAuth } } : {}),
       });
-    } catch (e) {
-      console.error(e);
+      try {
+        await ipfsPin({
+          ipfsClient,
+          localFolder: inFolder,
+          pin,
+        });
+      } catch (e) {
+        console.error(e);
+      }
     }
-  });
+  );
 program.parse(process.argv);

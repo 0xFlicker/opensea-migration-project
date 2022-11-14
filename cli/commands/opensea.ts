@@ -354,7 +354,7 @@ export async function generateOpenseaAirdropListFromMetadata({
   collectionSlug: string;
   outputCsv: string;
 }) {
-  const metadataDir = `./.metadata/${collectionSlug}`;
+  const metadataDir = `./.metadata/${collectionSlug}/metadata`;
   const metadataFiles = (await fs.promises.readdir(metadataDir)).filter(
     (file) => file.endsWith(".json")
   );

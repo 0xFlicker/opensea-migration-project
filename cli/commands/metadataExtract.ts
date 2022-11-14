@@ -1,11 +1,10 @@
 import fs from "fs";
-import { IERC721A } from "../typechain";
+import { IERC721A } from "../typechain/index.js";
 import { IPFSHTTPClient } from "ipfs-http-client";
 import { catchError, map, mergeMap, of, range } from "rxjs";
 import fetch from "node-fetch";
-import { backOff } from "../retry";
-import { fileExists } from "../files";
-import { loadIpfsAsObservable, loadIpfsContent } from "../ipfs";
+import { fileExists } from "../files.js";
+import { loadIpfsAsObservable, loadIpfsContent } from "../ipfs.js";
 
 export async function extractMetadata({
   contract,

@@ -45,7 +45,7 @@ export interface Owner {
 }
 
 export interface AssetEvent {
-  asset: CollectionAsset;
+  asset?: CollectionAsset;
   event_type:
     | "created"
     | "successful"

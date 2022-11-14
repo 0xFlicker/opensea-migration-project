@@ -9,6 +9,7 @@ interface IAirdropRow {
   tokenId: number;
   amount: number;
 }
+
 export async function airdrop({
   csv,
   privateKey,

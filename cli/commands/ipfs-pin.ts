@@ -1,7 +1,8 @@
-import { IPFSHTTPClient, globSource } from "ipfs-http-client";
+import { IPFSHTTPClient, globSource, CID } from "ipfs-http-client";
 import fs from "fs";
 import glob from "it-glob";
 import { resolve as pathResolve, basename, extname } from "path";
+import { ImportCandidate } from "ipfs-core-types/src/utils";
 
 async function countGlobFiles(cwd: string, pattern: string) {
   const fileSizes = new Map<string, number>();
@@ -16,87 +17,59 @@ async function countGlobFiles(cwd: string, pattern: string) {
 export async function ipfsPin({
   ipfsClient,
   localFolder,
+  pin,
 }: {
   ipfsClient: IPFSHTTPClient;
   localFolder: string;
+  pin: boolean;
 }) {
-  const imageRoot = `/${basename(localFolder)}/images`;
-  console.log(`Creating ${imageRoot} on IPFS`);
-  // await ipfsClient.files.mkdir(imageRoot, {
-  //   parents: true,
-  // });
+  const assetsRoot = pathResolve(localFolder, "assets");
+  const metadataRoot = pathResolve(localFolder, "metadata");
+
+  console.log(`Creating ${assetsRoot} on IPFS`);
+
+  const assetsImportCandidates: ImportCandidate[] = [];
   const fileNames = new Map<string, string>();
-  for await (const fileSource of globSource(localFolder, "**/!(*.json)")) {
+  for await (const fileSource of globSource(assetsRoot, "**/!(*.json)")) {
     if (fileSource.content) {
+      assetsImportCandidates.push(fileSource);
       const imageFileName = fileSource.path;
       fileNames.set(basename(fileSource.path), imageFileName.split("/")[1]);
-
-      // First delete the file if it exists
-      try {
-        await ipfsClient.files.rm(`${imageRoot}/${imageFileName}`, {
-          recursive: true,
-        });
-      } catch (e) {
-        // Ignore
-      }
-
-      // console.log(`Uploading ${imageFileName} to ${imageRoot}${imageFileName}`);
-      await ipfsClient.files.write(
-        `${imageRoot}${imageFileName}`,
-        fileSource.content,
-        {
-          create: true,
-          parents: true,
-        }
-      );
     }
   }
+  let finalCid: CID | null = null;
+  for await (const entry of ipfsClient.addAll(assetsImportCandidates, {
+    wrapWithDirectory: true,
+    pin,
+  })) {
+    finalCid = entry.cid;
+  }
 
-  // Get the CID of the root folder
-  const { cid } = await ipfsClient.files.stat(imageRoot);
-
-  // Load each metadata file and update the image path
-  const imageIpfsRoot = `ipfs://${cid.toString()}`;
-  const metadataRoot = `/${basename(localFolder)}/metadata`;
-  await ipfsClient.files.mkdir(metadataRoot, {
-    parents: true,
-  });
-  for await (const file of glob(localFolder, "**/*.json")) {
-    // console.log(`Uploading ${file}`);
+  if (!finalCid) {
+    throw new Error("No CID returned from IPFS");
+  }
+  const metadataImportCandidates: ImportCandidate[] = [];
+  for await (const file of glob(metadataRoot, "**/*.json")) {
     const metadata = JSON.parse(
-      await fs.promises.readFile(pathResolve(localFolder, file), "utf8")
+      await fs.promises.readFile(pathResolve(metadataRoot, file), "utf8")
     );
     const image = fileNames.get(basename(metadata.image));
     if (!image) {
       throw new Error(`Could not find image for ${metadata.image}`);
     }
-    metadata.image = `${imageIpfsRoot}/${image}`;
+    metadata.image = `ipfs://${finalCid.toV0()}/${image}`;
 
-    // First delete the file if it exists
-    try {
-      await ipfsClient.files.rm(
-        `${metadataRoot}/${basename(file, extname(file))}`,
-        {
-          recursive: true,
-        }
-      );
-    } catch (e) {
-      // Ignore
-    }
-
-    await ipfsClient.files.write(
-      `${metadataRoot}/${basename(file, extname(file))}`,
-      JSON.stringify(metadata, null, 2),
-      {
-        create: true,
-        parents: true,
-      }
-    );
+    metadataImportCandidates.push({
+      path: `${basename(file, extname(file))}`,
+      content: Buffer.from(JSON.stringify(metadata, null, 2)),
+    });
   }
-  // Get final metadata CID
-  const { cid: metadataCid } = await ipfsClient.files.stat(metadataRoot);
-
+  for await (const entry of ipfsClient.addAll(metadataImportCandidates, {
+    wrapWithDirectory: true,
+    pin,
+  })) {
+    finalCid = entry.cid;
+  }
   // Print the CIDs
-  console.log(`Metadata CID: ${metadataCid.toString()}`);
-  console.log(`Images CID: ${cid.toString()}`);
+  console.log(`CID: ${finalCid.toV0()}`);
 }
