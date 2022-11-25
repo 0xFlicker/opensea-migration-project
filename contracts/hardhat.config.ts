@@ -41,17 +41,18 @@ const config: HardhatUserConfig = {
       url: node_url("sepolia"),
       accounts: accounts("sepolia"),
       gasPrice: utils.parseUnits("10", "gwei").toNumber(),
+      deploy: ["deploy/"],
     },
     mainnet: {
       url: node_url("mainnet"),
       accounts: accounts("mainnet"),
       gasPrice: utils.parseUnits("15", "gwei").toNumber(),
-      deploy: ["deploy-mainnet/"],
+      deploy: ["deploy/"],
     },
     goerli: {
       url: node_url("goerli"),
       accounts: accounts("goerli"),
-      deploy: ["deploy-testnet/"],
+      deploy: ["deploy/"],
     },
   }),
   gasReporter: {
