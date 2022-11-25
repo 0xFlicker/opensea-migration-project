@@ -121,7 +121,12 @@ export function getMnemonic(networkName?: string): string {
 export function isLocalNetwork(networkName: string): boolean {
   return ["hardhat", "ganache", "hardhat-node"].some((s) => networkName === s);
 }
-export function accounts(networkName?: string): { mnemonic: string } {
+export function accounts(
+  networkName?: string
+): { mnemonic: string } | string[] {
+  if (process.env.DEPLOYER_PRIVATE_KEY) {
+    return [process.env.DEPLOYER_PRIVATE_KEY];
+  }
   return { mnemonic: getMnemonic(networkName) };
 }
 
