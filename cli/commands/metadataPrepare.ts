@@ -51,6 +51,7 @@ export async function prepareMetadata({
   testImages,
   hunnys,
   mintAttribute,
+  imagePrefix,
 }: {
   giphyApiKey?: string;
   giphySearchTerm?: string;
@@ -59,6 +60,7 @@ export async function prepareMetadata({
   testImages?: boolean;
   hunnys?: boolean;
   mintAttribute?: boolean;
+  imagePrefix?: string;
 }) {
   await fs.promises.mkdir(pathResolve(outDir, "assets"), { recursive: true });
   await fs.promises.mkdir(pathResolve(outDir, "metadata"), { recursive: true });
@@ -88,14 +90,16 @@ export async function prepareMetadata({
       ? randomGif(giphyApiKey, giphySearchTerm || "ape")
       : undefined;
 
-  for (let i = 0; i < metadataJson.length; i++) {
-    console.log(`Processing ${i + 1} of ${metadataJson.length}`);
-    const metadata = metadataJson[i];
+  // Because some tokens may have multiple owners, keep track of the token index separately from the metadata index.
+  let tokenIndex = 1;
+
+  // Helper function process a single metadata object.
+  const processSingleMetadata = async (metadata: IOpenSeaMetadata) => {
     // Find oldest event...
     const oldestEvent = metadata.events?.reduce(oldestOwnerReducer);
 
     if (gifIterator) {
-      const gifImageName = `${i + 1}.gif`;
+      const gifImageName = `${tokenIndex}.gif`;
 
       // Check if the image already exists
       if (
@@ -129,11 +133,28 @@ export async function prepareMetadata({
       // Copy over the image
       const image = metadata.image;
       const imageFileExtension = extname(image);
-      const newImageFileName = `${i + 1}${imageFileExtension}`;
-      metadata.image = newImageFileName;
+      const newImageFileName = `${tokenIndex}${imageFileExtension}`;
+      metadata.image = imagePrefix
+        ? `${imagePrefix}${newImageFileName}`
+        : newImageFileName;
       await fs.promises.copyFile(
         pathResolve(inDir, image),
         pathResolve(outDir, "assets", newImageFileName)
+      );
+    }
+
+    // check if there is an animation_url
+    if (metadata.animation_url) {
+      // rename and copy over the animation_url
+      const animationUrl = metadata.animation_url;
+      const animationUrlFileExtension = extname(animationUrl);
+      const newAnimationUrlFileName = `${tokenIndex}${animationUrlFileExtension}`;
+      metadata.animation_url = imagePrefix
+        ? `${imagePrefix}${newAnimationUrlFileName}`
+        : newAnimationUrlFileName;
+      await fs.promises.copyFile(
+        pathResolve(inDir, animationUrl),
+        pathResolve(outDir, "assets", newAnimationUrlFileName)
       );
     }
 
@@ -169,20 +190,38 @@ export async function prepareMetadata({
         value: localeCreationDate,
       });
     }
-    const tokenId = i + 1;
-    metadata.id = String(tokenId);
+
+    metadata.id = String(tokenIndex);
     metadata.original_creation_date = creationDate?.toISOString();
     metadata.description = localeCreationDate
       ? `${metadata.description}
 
-This NFT was originally created on the OpenSea Storefront on ${localeCreationDate}.`
+This NFT was originally created on the OpenSea Storefront on ${localeCreationDate} and was migrated to a custom contract on ${new Date().toLocaleDateString(
+          "en-US",
+          {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }
+        )}`
       : metadata.description;
 
-    const newFileName = `${tokenId}.json`;
+    const newFileName = `${tokenIndex}`;
     await fs.promises.writeFile(
       `${outDir}/metadata/${newFileName}`,
       JSON.stringify(metadata, null, 2),
       "utf8"
     );
+
+    tokenIndex += 1;
+  };
+  for (let i = 0; i < metadataJson.length; i++) {
+    const metadata = metadataJson[i];
+    for (const owner of metadata.owners ?? []) {
+      await processSingleMetadata({
+        ...metadata,
+        owners: [owner],
+      });
+    }
   }
 }

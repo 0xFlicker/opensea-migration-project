@@ -3,6 +3,7 @@ import { DeployFunction } from "hardhat-deploy/types";
 import fs from "fs";
 import { FlickDropNFT__factory } from "../typechain";
 import { parse } from "csv-parse";
+import { utils } from "ethers";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, network, run, ethers } = hre;
@@ -11,10 +12,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const contractDeployment = await deployments.get("StacysCollab_V2");
 
-  const count = 7;
+  const count = 10;
   const addresses: string[] = [];
   const holders = await fs.promises.readFile(
-    "../cli/.metadata/stacys-collab-airdrop.csv",
+    "../cli/.metadata/stacys-collabs-airdrop.csv",
     "utf8"
   );
   const record = new Promise<[string, string][]>((resolve, reject) =>
@@ -29,7 +30,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [_, ...rows] = await record;
   for (const [_, address] of rows) {
     addresses.push(address);
-    console.log(address);
+    // addresses.push(utils.getAddress(utils.hexlify(utils.randomBytes(20))));
   }
   if (addresses.length !== count) {
     throw new Error(`Expected ${count} addresses, got ${addresses.length}`);

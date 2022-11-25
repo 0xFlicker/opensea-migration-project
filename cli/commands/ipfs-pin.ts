@@ -58,6 +58,15 @@ export async function ipfsPin({
       throw new Error(`Could not find image for ${metadata.image}`);
     }
     metadata.image = `ipfs://${finalCid.toV0()}/${image}`;
+    if (metadata.animation_url) {
+      const animation = fileNames.get(basename(metadata.animation_url));
+      if (!animation) {
+        throw new Error(
+          `Could not find animation for ${metadata.animation_url}`
+        );
+      }
+      metadata.animation_url = `ipfs://${finalCid.toV0()}/${animation}`;
+    }
 
     metadataImportCandidates.push({
       path: `${basename(file, extname(file))}`,

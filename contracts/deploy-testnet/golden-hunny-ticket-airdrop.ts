@@ -12,7 +12,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const contractDeployment = await deployments.get("GoldenTicket");
 
-  const count = 11;
+  const count = 15;
   const addresses: string[] = [];
   const holders = await fs.promises.readFile(
     "../cli/.metadata/golden-hunny-ticket-airdrop.csv",
@@ -30,6 +30,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [_, ...rows] = await record;
   for (const [_, address] of rows) {
     addresses.push(address);
+    // addresses.push(utils.getAddress(utils.hexlify(utils.randomBytes(20))));
   }
   if (addresses.length !== count) {
     throw new Error(`Expected ${count} addresses, got ${addresses.length}`);

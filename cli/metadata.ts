@@ -22,6 +22,7 @@ export interface IMetadata {
   image: string;
   description?: string;
   external_url?: string;
+  animation_url?: string;
   name: string;
   attributes?: IMetadataAttribute[];
   properties?: Record<string, string>;

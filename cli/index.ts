@@ -121,6 +121,7 @@ metadataCommands
   .option("-t, --testnet", "testnet (use giphy random images")
   .option("-h, --hunnys", "Custom hunny attribute")
   .option("-m, --mint-attribute", "Add original mint date attribute")
+  .option("-p, --prefix <prefix>", "Prefix for the image")
   .action(
     async ({
       inDir,
@@ -130,6 +131,7 @@ metadataCommands
       testnet,
       hunnys,
       mintAttribute,
+      prefix,
     }) => {
       const env = { ...process.env, ...dotenv.config().parsed };
       giphyApiKey = giphyApiKey || env.GIPHY_API_KEY;
@@ -141,6 +143,7 @@ metadataCommands
         testImages: testnet,
         hunnys,
         mintAttribute,
+        imagePrefix: prefix,
       });
     }
   );

@@ -18,12 +18,12 @@ git add .
 git commit -m "Initial commit"
 git apply --reject --whitespace=fix ../updates.patch
 
-git rm -rf stacys/49949388378051653683986555167011770124866897184891886820722263559079542652929*
-git rm -rf stacys/49949388378051653683986555167011770124866897184891886820722263557980031025153*
-git rm -rf stacys/49949388378051653683986555167011770124866897184891886820722263562378077536257*
-git rm -rf stacys/49949388378051653683986555167011770124866897184891886820722263524994682191873*
-git rm -rf stacys/49949388378051653683986555167011770124866897184891886820722263604159519391745*
-git rm -rf stacys/49949388378051653683986555167011770124866897184891886820722263554681496141825*
+git mv stacys/49949388378051653683986555167011770124866897184891886820722263559079542652929* stacys-collabs/
+git mv stacys/49949388378051653683986555167011770124866897184891886820722263557980031025153* stacys-collabs/
+git mv stacys/49949388378051653683986555167011770124866897184891886820722263562378077536257* stacys-collabs/
+git mv stacys/49949388378051653683986555167011770124866897184891886820722263524994682191873* stacys-collabs/
+git mv stacys/49949388378051653683986555167011770124866897184891886820722263604159519391745* stacys-collabs/
+git mv stacys/49949388378051653683986555167011770124866897184891886820722263554681496141825* stacys-collabs/
 
 git mv hunnys-ogs/49949388378051653683986555167011770124866897184891886820722263688821914730502* golden-hunny-ticket/
 git mv hunnys-ogs/49949388378051653683986555167011770124866897184891886820722263765787728674817* golden-hunny-ticket/
@@ -50,15 +50,15 @@ rm -rf stacy-s-candy-shop
 
 cd ..
 
-yarn -s cli metadata prepare --mint-attribute -i .metadata/stacys -o .metadata/stacys-airdrop
-yarn -s cli metadata prepare --mint-attribute --hunnys -i .metadata/hunnys-ogs -o .metadata/hunnys-ogs-airdrop
-yarn -s cli metadata prepare -i .metadata/golden-hunny-ticket -o .metadata/golden-hunny-ticket-airdrop
-yarn -s cli metadata prepare --mint-attribute -i .metadata/stacys-collabs -o .metadata/stacys-collabs-airdrop
+yarn -s cli metadata prepare --mint-attribute -i .metadata/stacys -o .metadata/stacys-airdrop -p https://stacys-v2.s3.us-east-2.amazonaws.com/stacys/
+yarn -s cli metadata prepare --mint-attribute --hunnys -i .metadata/hunnys-ogs -o .metadata/hunnys-ogs-airdrop -p https://stacys-v2.s3.us-east-2.amazonaws.com/hunnys-ogs/
+yarn -s cli metadata prepare -i .metadata/golden-hunny-ticket -o .metadata/golden-hunny-ticket-airdrop -p https://stacys-v2.s3.us-east-2.amazonaws.com/golden-hunny-ticket/
+yarn -s cli metadata prepare --mint-attribute -i .metadata/stacys-collabs -o .metadata/stacys-collabs-airdrop -p https://stacys-v2.s3.us-east-2.amazonaws.com/stacys-collab/
 
-yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/hunnys-ogs-airdrop
-yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/stacys-airdrop
-yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/golden-hunny-ticket-airdrop
-yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/stacys-collabs-airdrop
+# yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/hunnys-ogs-airdrop
+# yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/stacys-airdrop
+# yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/golden-hunny-ticket-airdrop
+# yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/stacys-collabs-airdrop
 
 yarn -s cli metadata owners-of --slug golden-hunny-ticket-airdrop --out .metadata/golden-hunny-ticket-airdrop.csv
 yarn -s cli metadata owners-of --slug stacys-airdrop --out .metadata/stacys-airdrop.csv

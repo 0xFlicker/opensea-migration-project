@@ -10,7 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     args: [
       "0x58666BD033D3e1d3e0add72beA53C3e771C9c743",
-      "ipfs://QmUibkpcx9bxNNuZ7Qr9wNau76MCeibLueKo2zgJBEb1Mu/",
+      "https://stacys-v2.s3.us-east-2.amazonaws.com/stacys/",
     ],
     log: true,
     waitConfirmations: 5,

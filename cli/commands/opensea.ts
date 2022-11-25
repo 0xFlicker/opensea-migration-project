@@ -355,9 +355,7 @@ export async function generateOpenseaAirdropListFromMetadata({
   outputCsv: string;
 }) {
   const metadataDir = `./.metadata/${collectionSlug}/metadata`;
-  const metadataFiles = (await fs.promises.readdir(metadataDir)).filter(
-    (file) => file.endsWith(".json")
-  );
+  const metadataFiles = await fs.promises.readdir(metadataDir);
   const metadatas: IOpenSeaMetadata[] = [];
   for (let i = 0; i < metadataFiles.length; i += 10) {
     const batch = metadataFiles.slice(i, i + 10);

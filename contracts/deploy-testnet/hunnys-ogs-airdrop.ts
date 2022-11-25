@@ -3,6 +3,7 @@ import { DeployFunction } from "hardhat-deploy/types";
 import fs from "fs";
 import { FlickDropNFT__factory } from "../typechain";
 import { parse } from "csv-parse";
+import { utils } from "ethers";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, network, run, ethers } = hre;
@@ -29,6 +30,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const [_, ...rows] = await record;
   for (const [_, address] of rows) {
     addresses.push(address);
+    // addresses.push(utils.getAddress(utils.hexlify(utils.randomBytes(20))));
   }
   if (addresses.length !== count) {
     throw new Error(`Expected ${count} addresses, got ${addresses.length}`);
