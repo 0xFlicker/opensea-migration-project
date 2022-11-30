@@ -1,0 +1,11 @@
+{
+  "name": "opensea-migration",
+  "version": "1.0.0",
+  "description": "Opensea migration tooling",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {}
+}

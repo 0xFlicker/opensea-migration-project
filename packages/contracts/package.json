@@ -1,0 +1,53 @@
+{
+  "name": "@opensea-migration/contracts",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.1.1",
+    "@nomiclabs/hardhat-etherscan": "^3.1.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@openzeppelin/contracts": "^4.7.3",
+    "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^6.1.3",
+    "@types/cli-progress": "^3.11.0",
+    "@types/jest": "^29.1.2",
+    "@types/mime-types": "^2.1.1",
+    "@types/node": "^18.8.3",
+    "chai": "^4.3.6",
+    "dotenv": "^16.0.3",
+    "esbuild": "^0.15.12",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.7.1",
+    "hardhat": "^2.11.2",
+    "hardhat-deploy": "^0.11.18",
+    "hardhat-gas-reporter": "^1.0.9",
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.24",
+    "solhint": "^3.3.7",
+    "solidity-coverage": "^0.8.2",
+    "ts-node": "^10.9.1",
+    "typechain": "^8.1.0",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@divergencetech/ethier": "^0.37.0",
+    "@giphy/js-fetch-api": "^4.4.0",
+    "cli-progress": "^3.11.2",
+    "commander": "^9.4.1",
+    "csv-parse": "^5.3.1",
+    "csv-parser": "^3.0.0",
+    "erc721a": "^4.2.3",
+    "ipfs-http-client": "^59.0.0",
+    "it-glob": "^2.0.0",
+    "node-fetch": "^3.2.10",
+    "operator-filter-registry": "^1.0.4",
+    "rxjs": "^7.5.7",
+    "three": "^0.145.0"
+  },
+  "scripts": {
+    "build:cli": "esbuild cli/index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
+    "build:cli:silent": "esbuild cli/index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
+    "cli": "yarn -s build:cli:silent && node dist/cli.mjs"
+  }
+}
