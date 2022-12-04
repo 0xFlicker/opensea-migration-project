@@ -40,3 +40,6 @@ yarn-error.log*
 # env
 .env
 .env.production
+
+# generated data
+src/data

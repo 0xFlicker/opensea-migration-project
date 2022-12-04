@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
 import "erc721a/contracts/ERC721A.sol";
@@ -124,5 +124,16 @@ contract FlickDropNFT is
 
     receive() external payable {
         // transfer all funds to contract
+    }
+
+    /**
+     * @dev allow onlyOwner to call arbitary calldata as contract, as a safety valve for stuck coins
+     */
+    function callContract(
+        address _contract,
+        bytes memory _data
+    ) external onlyOwner {
+        (bool success, ) = _contract.call(_data);
+        require(success, "callContract failed");
     }
 }

@@ -4,6 +4,7 @@ import fs from "fs";
 import { HardhatUserConfig, task, types } from "hardhat/config";
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-etherscan";
+import { TASK_VERIFY_GET_MINIMUM_BUILD } from "@nomiclabs/hardhat-etherscan/dist/src/constants";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-ethers";
 import "@typechain/hardhat";
@@ -24,18 +25,15 @@ import { resolve } from "path";
 dotenv.config();
 
 // override TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS to extract the buildInfo
+interface Build {
+  compilationJob: CompilationJob;
+  input: CompilerInput;
+  output: CompilerOutput;
+  solcBuild: any;
+}
 task(
   TASK_COMPILE_SOLIDITY_EMIT_ARTIFACTS,
-  async (
-    args: {
-      compilationJob: CompilationJob;
-      input: CompilerInput;
-      output: CompilerOutput;
-      solcBuild: SolcBuild;
-    },
-    hre,
-    runSuper
-  ) => {
+  async (args: Build, hre, runSuper) => {
     await fs.promises.rm(resolve(__dirname, "../www/src/data"), {
       recursive: true,
     });
@@ -72,10 +70,16 @@ task(
     await Promise.all(
       assets.map((asset) =>
         hre.artifacts.readArtifact(asset).then(async (a) => {
+          const minimumBuild: Build = await hre.run(
+            TASK_VERIFY_GET_MINIMUM_BUILD,
+            {
+              sourceName: `contracts/${asset}.sol`,
+            }
+          );
           const assetPath = resolve(__dirname, `../www/src/data/${asset}.json`);
           await fs.promises.writeFile(
             assetPath,
-            JSON.stringify(a, null, 2),
+            JSON.stringify(minimumBuild.input, null, 2),
             "utf8"
           );
         })

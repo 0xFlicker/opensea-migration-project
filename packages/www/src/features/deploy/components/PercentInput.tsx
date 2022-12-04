@@ -9,6 +9,9 @@ export const PercentageInput: FC<TextFieldProps> = (props) => {
       {...fieldToTextField(props)}
       margin="normal"
       fullWidth
+      InputLabelProps={{
+        shrink: true,
+      }}
       InputProps={{
         endAdornment: <InputAdornment position="end">%</InputAdornment>,
       }}

@@ -1,35 +1,39 @@
 import fetch from "node-fetch";
 import { ContractFactory, Signer } from "ethers";
-
-import {
-  StacysCollab_V2,
-  StacysCollab_V2__factory,
-  Stacys_V2,
-  Stacys_V2__factory,
-  HunnysOGS_V2,
-  HunnysOGS_V2__factory,
-  GoldenTicket,
-  GoldenTicket__factory,
-  GoldenTicketRedeemed,
-  GoldenTicketRedeemed__factory,
-} from "@opensea-migration/contracts/typechain";
+import type { CompilerInput } from "hardhat/types";
+// import {
+//   StacysCollab_V2,
+//   StacysCollab_V2__factory,
+//   Stacys_V2,
+//   Stacys_V2__factory,
+//   HunnysOGS_V2,
+//   HunnysOGS_V2__factory,
+//   GoldenTicket,
+//   GoldenTicket__factory,
+//   GoldenTicketRedeemed,
+//   GoldenTicketRedeemed__factory,
+// } from "@opensea-migration/contracts/typechain";
 
 import { Artifact, ContractName, EtherscanVerifyRequest } from "./types";
-// import Stacys_V2 from "../../data/Stacys_V2.json";
-// import StacysCollab_V2 from "../../data/StacysCollab_V2.json";
-// import HunnysOGS_V2 from "../../data/HunnysOGS_V2.json";
-// import GoldenTicket from "../../data/GoldenTicket.json";
-// import GoldenTicketRedeemed from "../../data/GoldenTicketRedeemed.json";
-import buildInfo from "../../data/build-info.json";
-import { solcVersion } from "../../data/solc-version.json";
+import Stacys_V2 from "../../data/Stacys_V2.json";
+export { default as Stacys_V2_airdrop } from "../../data/stacys-airdrop.json";
+import StacysCollab_V2 from "../../data/StacysCollab_V2.json";
+export { default as StacysCollab_V2_airdrop } from "../../data/stacys-collabs-airdrop.json";
+import HunnysOGS_V2 from "../../data/HunnysOGS_V2.json";
+export { default as HunnysOGS_V2_airdrop } from "../../data/hunnys-ogs-airdrop.json";
+import GoldenTicket from "../../data/GoldenTicket.json";
+export { default as GoldenTicket_airdrop } from "../../data/golden-hunny-ticket-airdrop.json";
+import GoldenTicketRedeemed from "../../data/GoldenTicketRedeemed.json";
+export { default as GoldenTicketRedeemed_airdrop } from "../../data/golden-hunny-ticket-redeemed-airdrop.json";
+import solcVersion from "../../data/solc-version.json";
 
-// const contractArtifacts: Record<ContractName, Artifact> = {
-//   Stacys_V2,
-//   StacysCollab_V2,
-//   HunnysOGS_V2,
-//   GoldenTicket,
-//   GoldenTicketRedeemed,
-// };
+export const contractArtifacts: Record<ContractName, CompilerInput> = {
+  Stacys_V2,
+  StacysCollab_V2,
+  HunnysOGS_V2,
+  GoldenTicket,
+  GoldenTicketRedeemed,
+} as Record<ContractName, CompilerInput>;
 
 // type ContractMap = {
 //   Stacys_V2: Stacys_V2;
@@ -88,7 +92,7 @@ import { solcVersion } from "../../data/solc-version.json";
 //   return new GoldenTicketRedeemed__factory(signer).deploy(...args);
 // }
 
-const etherscanApis = {
+export const etherscanApis = {
   mainnet: "https://api.etherscan.io/api",
   goerli: "https://api-goerli.etherscan.io/api",
   sepolia: "https://api-sepolia.etherscan.io/api",
@@ -99,12 +103,13 @@ export function etherscanVerificationRequest({
   contractAddress,
   constructorArguments,
   etherscanApiKey,
+  source,
 }: {
   contractName: string;
   contractAddress: string;
   etherscanApiKey: string;
   constructorArguments: string;
-  network: string;
+  source: CompilerInput;
 }): EtherscanVerifyRequest {
   return {
     apikey: etherscanApiKey,
@@ -112,9 +117,33 @@ export function etherscanVerificationRequest({
     codeformat: "solidity-standard-json-input",
     action: "verifysourcecode",
     contractaddress: contractAddress,
-    sourceCode: JSON.stringify(buildInfo),
+    sourceCode: JSON.stringify(source),
     contractname: contractName,
-    compilerversion: solcVersion,
+    compilerversion: `v${solcVersion.solcVersion}`,
     constructorArguements: constructorArguments,
   };
+}
+
+export interface IEtherscanApiResponse {
+  message: string;
+  result: string;
+  status: string;
+}
+
+export function isResponseVerificationPending(response: IEtherscanApiResponse) {
+  return response.message === "NOTOK" && response.result === "Pending in queue";
+}
+
+export function isResponseVerificationFailure(response: IEtherscanApiResponse) {
+  return (
+    response.message === "NOTOK" &&
+    response.result === "Fail - Unable to verify"
+  );
+}
+
+export function isResponseVerificationSuccess(response: IEtherscanApiResponse) {
+  return (
+    (response.message === "OK" && response.result === "Pass - Verified") ||
+    (response.message === "NOTOK" && response.result === "Already Verified")
+  );
 }

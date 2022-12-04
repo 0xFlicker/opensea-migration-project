@@ -3,13 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { reducer as web3Reducer } from "features/web3/redux";
 import { reducer as appbarReducer } from "features/appbar/redux";
+import { api as deployApi } from "features/deploy/api";
 
 export const store = configureStore({
   reducer: {
     web3: web3Reducer,
     appbar: appbarReducer,
+    [deployApi.reducerPath]: deployApi.reducer,
   },
   devTools: process.env.NODE_ENV !== "production",
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(deployApi.middleware),
 });
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

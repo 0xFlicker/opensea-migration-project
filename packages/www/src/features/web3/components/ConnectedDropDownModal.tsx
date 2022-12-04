@@ -8,6 +8,8 @@ import MenuItem from "@mui/material/MenuItem";
 import MenuList from "@mui/material/MenuList";
 import Typography from "@mui/material/Typography";
 import LogoutIcon from "@mui/icons-material/Logout";
+import ProfileIcon from "@mui/icons-material/AccountCircle";
+import { WrappedLink } from "components/WrappedLink";
 
 interface IProps {
   anchorEl: Element;
@@ -48,6 +50,14 @@ export const ConnectedDropDownModal: FC<IProps> = ({
             </ListItemIcon>
             <ListItemText
               primary={<Typography textAlign="right">Disconnect</Typography>}
+            />
+          </MenuItem>
+          <MenuItem component={WrappedLink} href="/settings">
+            <ListItemIcon>
+              <ProfileIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={<Typography textAlign="right">Settings</Typography>}
             />
           </MenuItem>
         </MenuList>

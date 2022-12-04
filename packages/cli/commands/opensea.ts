@@ -200,12 +200,12 @@ export async function downloadMetadata({
                         const retryAfter = parseInt(
                           response.headers.get("retry-after") ?? "0"
                         );
-                        if (retryAfter > 0) {
+                        if (retryAfter >= 0) {
                           console.log(
                             `Rate limited, retrying in ${retryAfter}s`
                           );
                           await new Promise((resolve) =>
-                            setTimeout(resolve, retryAfter * 1000)
+                            setTimeout(resolve, (retryAfter + 1) * 1000)
                           );
                         }
                         throw new Error("Rate limited");
@@ -247,10 +247,10 @@ export async function downloadMetadata({
                     const retryAfter = parseInt(
                       response.headers.get("retry-after") ?? "0"
                     );
-                    if (retryAfter > 0) {
+                    if (retryAfter >= 0) {
                       console.log(`Rate limited, retrying in ${retryAfter}s`);
                       await new Promise((resolve) =>
-                        setTimeout(resolve, retryAfter * 1000)
+                        setTimeout(resolve, (retryAfter + 1) * 1000)
                       );
                     }
                     throw new Error("Rate limited");
@@ -324,9 +324,11 @@ export async function downloadMetadata({
     );
     if (response.status === 429) {
       const retryAfter = parseInt(response.headers.get("retry-after") ?? "0");
-      if (retryAfter > 0) {
+      if (retryAfter >= 0) {
         console.log(`Rate limited, retrying in ${retryAfter}s`);
-        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+        await new Promise((resolve) =>
+          setTimeout(resolve, (retryAfter + 1) * 1000)
+        );
       }
       throw new Error("Rate limited");
     }

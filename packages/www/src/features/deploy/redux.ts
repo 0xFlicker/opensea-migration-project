@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ContractName } from "./types";
 
 type TStatus =
   | "idle"
@@ -12,9 +11,9 @@ type TStatus =
   | "error";
 
 interface IState {
-  contractName?: ContractName;
   status: TStatus;
   error?: string;
+  guid?: string;
 }
 
 export const initialState = {
@@ -25,15 +24,15 @@ const slice = createSlice({
   name: "deploy",
   initialState,
   reducers: {
-    deploy(state: IState, action: PayloadAction<ContractName>) {
+    deploy(state: IState) {
       state.status = "deploying";
-      state.contractName = action.payload;
     },
     deployed(state: IState) {
       state.status = "deployed";
     },
-    verify(state: IState) {
+    verify(state: IState, action: PayloadAction<string>) {
       state.status = "verifying";
+      state.guid = action.payload;
     },
     verified(state: IState) {
       state.status = "verified";

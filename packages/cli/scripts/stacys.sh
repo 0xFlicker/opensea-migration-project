@@ -61,6 +61,7 @@ yarn -s cli metadata prepare --mint-attribute -i .metadata/stacys-collabs -o .me
 # yarn -s cli ipfs pin-metadata -i http://localhost:5001 .metadata/stacys-collabs-airdrop
 
 yarn -s cli metadata owners-of --slug golden-hunny-ticket-airdrop --out .metadata/golden-hunny-ticket-airdrop.csv --out-json .metadata/golden-hunny-ticket-airdrop.json
+yarn -s cli metadata owners-of --slug golden-hunny-ticket-redeemed-airdrop --out .metadata/golden-hunny-ticket-redeemed-airdrop.csv --out-json .metadata/golden-hunny-ticket-redeemed-airdrop.json
 yarn -s cli metadata owners-of --slug stacys-airdrop --out .metadata/stacys-airdrop.csv --out-json .metadata/stacys-airdrop.json
 yarn -s cli metadata owners-of --slug hunnys-ogs-airdrop --out .metadata/hunnys-ogs-airdrop.csv --out-json .metadata/hunnys-ogs-airdrop.json
 yarn -s cli metadata owners-of --slug stacys-collabs-airdrop --out .metadata/stacys-collabs-airdrop.csv --out-json .metadata/stacys-collabs-airdrop.json

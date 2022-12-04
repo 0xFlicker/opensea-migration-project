@@ -1,42 +1,9 @@
 import Head from "next/head";
 import { DefaultProvider } from "context/default";
-import { GetStaticProps, NextPage } from "next";
+import { NextPage } from "next";
 import { Home } from "layouts/Home";
-import { infuraKey, defaultChain, nftContractAddress } from "utils/config";
-import { providers } from "ethers";
-import { OnchainGas__factory } from "contracts";
 
-const HOUR_SECONDS = 60 * 60;
-
-// export const getStaticProps: GetStaticProps<{
-//   totalMinted: number;
-//   maxSupply: number;
-// }> = async () => {
-//   const provider = new providers.InfuraProvider(
-//     defaultChain.get().network,
-//     infuraKey.get()
-//   );
-//   const contract = OnchainGas__factory.connect(
-//     nftContractAddress.get(),
-//     provider
-//   );
-//   const [totalMinted, maxSupply] = await Promise.all([
-//     contract.totalSupply(),
-//     contract.maxSupply(),
-//   ]);
-//   return {
-//     props: {
-//       totalMinted: totalMinted.toNumber(),
-//       maxSupply: maxSupply.toNumber(),
-//     },
-//     revalidate: HOUR_SECONDS,
-//   };
-// };
-
-const HomePage: NextPage<{
-  totalMinted: number;
-  maxSupply: number;
-}> = ({ totalMinted, maxSupply }) => {
+const HomePage: NextPage<{}> = () => {
   const title = "NFT Contract Deployer";
   const description = "Handcrafted NFT contract deployer and verifier";
   return (
