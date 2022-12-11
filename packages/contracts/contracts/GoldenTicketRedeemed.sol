@@ -6,21 +6,22 @@ import "./FlickDropNFT.sol";
 contract GoldenTicketRedeemed is FlickDropNFT {
     address public goldenTicketAddress;
 
-    constructor(address feeReceiver, string memory baseURI)
+    constructor(
+        string memory baseURI
+    )
         FlickDropNFT(
             "Golden Hunny Ticket (Redeemed)",
             "GOLDENTICKET-REDEEMED",
-            feeReceiver,
-            500
+            address(0xdead),
+            0
         )
     {
         setBaseURI(baseURI);
     }
 
-    function setGoldenTicketAddress(address _goldenTicketAddress)
-        external
-        onlyOwner
-    {
+    function setGoldenTicketAddress(
+        address _goldenTicketAddress
+    ) external onlyOwner {
         goldenTicketAddress = _goldenTicketAddress;
     }
 
@@ -39,7 +40,7 @@ contract GoldenTicketRedeemed is FlickDropNFT {
     function _beforeTokenTransfers(
         address from,
         address to,
-        uint256, /* tokenId */
+        uint256 /* tokenId */,
         uint256 /* quantity */
     ) internal pure override {
         require(

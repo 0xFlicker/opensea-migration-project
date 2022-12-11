@@ -33,3 +33,7 @@ export interface IRoyaltiesAndMetadataForm {
   royaltiesPercentage: number;
   baseURI: string;
 }
+
+export interface IMetadataForm {
+  baseURI: string;
+}

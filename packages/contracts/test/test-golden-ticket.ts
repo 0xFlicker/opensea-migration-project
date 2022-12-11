@@ -22,6 +22,7 @@ describe("Golden ticket test", function () {
     const [deployer, user] = accounts;
     const goldenTicket = await new GoldenTicket__factory(deployer).deploy(
       deployer.address,
+      500,
       "ipfs://1/"
     );
 
@@ -41,11 +42,12 @@ describe("Golden ticket test", function () {
     const [deployer, user] = accounts;
     const goldenTicket = await new GoldenTicket__factory(deployer).deploy(
       deployer.address,
+      500,
       "ipfs://1/"
     );
     const goldenTicketRedeemer = await new GoldenTicketRedeemed__factory(
       deployer
-    ).deploy(deployer.address, "ipfs://1/");
+    ).deploy("ipfs://1/");
     await goldenTicket.deployed();
     await goldenTicketRedeemer.deployed();
     await goldenTicket.setGoldenTicketRedeemerAddress(
@@ -77,11 +79,12 @@ describe("Golden ticket test", function () {
     const [deployer, user] = accounts;
     const goldenTicket = await new GoldenTicket__factory(deployer).deploy(
       deployer.address,
+      500,
       "ipfs://1/"
     );
     const goldenTicketRedeemer = await new GoldenTicketRedeemed__factory(
       deployer
-    ).deploy(deployer.address, "ipfs://1/");
+    ).deploy("ipfs://1/");
     await goldenTicket.deployed();
     await goldenTicketRedeemer.deployed();
     await goldenTicket.setGoldenTicketRedeemerAddress(

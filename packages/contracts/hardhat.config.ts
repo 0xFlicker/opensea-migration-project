@@ -133,12 +133,11 @@ const config: HardhatUserConfig = {
   }),
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
-    gasPrice: 8,
-    currency: "USD",
+    gasPrice: 20,
+    currency: "ETH",
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
   },
   etherscan: {
-    // @ts-ignore this is for the verifier
     apiKey: {
       mainnet: process.env.ETHERSCAN_API_KEY_MAINNET || "",
       goerli: process.env.ETHERSCAN_API_KEY_GOERLI || "",

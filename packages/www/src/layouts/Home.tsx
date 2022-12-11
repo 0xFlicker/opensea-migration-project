@@ -9,7 +9,7 @@ import { StacysCollabDeployCard } from "features/deploy/components/StacysCollabD
 import { HunnysOGSDeployCard } from "features/deploy/components/HunnysOGSDeployCard";
 import { StacysDeployCard } from "features/deploy/components/StacysDeployCard";
 import { GoldenTicketDeployCard } from "features/deploy/components/GoldenTicket";
-import { GoldenTicketRedeemedDeployCard } from "features/deploy/components/GoldenTicketRedeemed";
+import { GoldenTicketRedeemedCard } from "features/deploy/components/GoldenTIcketRedeemedCard";
 
 export const Home: FC = () => {
   return (
@@ -51,7 +51,7 @@ export const Home: FC = () => {
               <GoldenTicketDeployCard />
             </Grid>
             <Grid item xs={12} md={12} lg={6} xl={6}>
-              <GoldenTicketRedeemedDeployCard />
+              <GoldenTicketRedeemedCard />
             </Grid>
             <Grid item xs={12} md={12} lg={12} xl={12}>
               <Box paddingTop={4} />

@@ -14,7 +14,7 @@ describe("Minting test", function () {
     accounts = await ethers.getSigners();
   });
 
-  it("bulk mint", async () => {
+  it.only("bulk mint", async () => {
     const [deployer] = accounts;
     const flickdropFactory = new FlickDropNFT__factory(deployer);
     const flickdrop = await flickdropFactory.deploy(

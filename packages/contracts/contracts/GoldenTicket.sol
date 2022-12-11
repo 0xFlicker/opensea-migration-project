@@ -16,7 +16,14 @@ contract GoldenTicket is FlickDropNFT, AccessControl {
         address feeReceiver,
         uint96 feeBasisPoints,
         string memory baseURI
-    ) FlickDropNFT("Golden Hunny Ticket", "GOLDENTICKET", feeReceiver, feeBasisPoints) {
+    )
+        FlickDropNFT(
+            "Golden Hunny Ticket",
+            "GOLDENTICKET",
+            feeReceiver,
+            feeBasisPoints
+        )
+    {
         setBaseURI(baseURI);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         grantRole(MINT_ROLE, msg.sender);
