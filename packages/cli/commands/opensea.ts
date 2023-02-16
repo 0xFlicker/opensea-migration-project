@@ -11,6 +11,7 @@ import {
   Owner,
 } from "../metadata";
 import { retryWithBackoff } from "../retry";
+import { URLSearchParams } from "url";
 
 const GET_ASSETS = "https://api.opensea.io/api/v1/assets";
 
@@ -51,6 +52,39 @@ async function* fetchWithPagination<T>(
     }
     next = result.next;
   }
+}
+
+async function fetchOwnerOfToken(
+  apiKey: string,
+  collectionAddress: string,
+  tokenId: string,
+  queryParameters: URLSearchParams
+) {
+  return retryWithBackoff(
+    async () => {
+      const response = await fetch(
+        `https://api.opensea.io/api/v1/asset/${collectionAddress}/${tokenId}/owners?${queryParameters.toString()}`,
+        {
+          headers: {
+            "X-API-KEY": apiKey,
+          },
+        }
+      );
+      if (response.status === 429) {
+        const retryAfter = parseInt(response.headers.get("retry-after") ?? "0");
+        if (retryAfter >= 0) {
+          // console.log(`Rate limited, retrying in ${retryAfter}s`);
+          await new Promise((resolve) =>
+            setTimeout(resolve, (retryAfter + 1) * 1000)
+          );
+        }
+        throw new Error("Rate limited");
+      }
+      return (await response.json()) as GetAssetOwnersResponse;
+    },
+    5,
+    1000
+  );
 }
 
 export async function fetchSpecificAssets({
@@ -421,5 +455,53 @@ export async function generateOpenseaAirdropListFromMetadata({
       ),
       "utf8"
     );
+  }
+}
+
+export async function updateOwnerOfMetadata({
+  apiKey,
+  metadataFolder,
+}: {
+  apiKey: string;
+  metadataFolder: string;
+}) {
+  const metadataFolderPrefix = `./.metadata/${metadataFolder}/metadata`;
+  const metadataFiles = await fs.promises.readdir(metadataFolderPrefix);
+  for (const metadataFile of metadataFiles) {
+    const metadata = JSON.parse(
+      await fs.promises.readFile(
+        `${metadataFolderPrefix}/${metadataFile}`,
+        "utf8"
+      )
+    ) as IOpenSeaMetadata;
+    const originalTokenId = metadata.original_token_id;
+    const originalContractAddress = metadata.original_contract_address;
+    if (!originalTokenId || !originalContractAddress) {
+      throw new Error(
+        `Original token ID or contract address undefined for ${metadata.name}`
+      );
+    }
+    // Load the original owner data
+    const ownersResponse = await fetchOwnerOfToken(
+      apiKey,
+      originalContractAddress,
+      originalTokenId,
+      new URLSearchParams()
+    );
+    const owners = ownersResponse.owners;
+    // Verify that the owner data is the same
+    if (!metadata.owners) {
+      throw new Error(`Owners undefined for ${metadata.name}`);
+    }
+    if (
+      owners.length !== metadata.owners.length ||
+      owners.some(
+        (o, i) => o.owner.address !== metadata.owners?.[i].owner.address
+      )
+    ) {
+      console.log(
+        `Owner data mismatch for ${metadata.name} (${originalTokenId})`
+      );
+    }
   }
 }

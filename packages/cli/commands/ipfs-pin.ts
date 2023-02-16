@@ -13,6 +13,36 @@ async function countGlobFiles(cwd: string, pattern: string) {
   return fileSizes;
 }
 
+export async function ipfsPinSingle({
+  ipfsClient,
+  localFile,
+}: {
+  ipfsClient: IPFSHTTPClient;
+  localFile: string;
+}) {
+  let finalCid: CID | null = null;
+  for await (const entry of ipfsClient.addAll(
+    [
+      {
+        path: basename(localFile),
+        content: fs.createReadStream(localFile),
+      },
+    ],
+    {
+      pin: true,
+      wrapWithDirectory: true,
+    }
+  )) {
+    finalCid = entry.cid;
+  }
+
+  if (!finalCid) {
+    throw new Error("No CID returned from IPFS");
+  }
+  // Print the CIDs
+  console.log(`CID: ${finalCid.toV0()}`);
+}
+
 // Pin a directory of files to IPFS
 export async function ipfsPin({
   ipfsClient,

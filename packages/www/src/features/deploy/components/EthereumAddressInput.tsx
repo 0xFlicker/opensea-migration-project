@@ -1,8 +1,8 @@
 import { FC } from "react";
+import Image from "next/image";
 import TextField from "@mui/material/TextField";
 import { fieldToTextField, TextFieldProps } from "formik-mui";
-import InputAdornment from "@mui/material/InputAdornment";
-import Image from "next/image";
+import { InputAdornment } from "@mui/material";
 import { useAppSelector } from "app/store";
 import { selectors as appbarSelectors } from "features/appbar/redux";
 
@@ -14,7 +14,6 @@ export const EthereumAddressInput: FC<TextFieldProps> = (props) => {
       margin="normal"
       fullWidth
       InputProps={{
-        ...props.InputProps,
         startAdornment: (
           <InputAdornment position="start">
             <Image

@@ -61,7 +61,7 @@ contract FlickDropNFT is
     function setApprovalForAll(
         address operator,
         bool approved
-    ) public override(ERC721A, IERC721A) onlyAllowedOperatorApproval(operator) {
+    ) public override(IERC721A, ERC721A) onlyAllowedOperatorApproval(operator) {
         super.setApprovalForAll(operator, approved);
     }
 
@@ -74,7 +74,7 @@ contract FlickDropNFT is
     )
         public
         payable
-        override(ERC721A, IERC721A)
+        override(IERC721A, ERC721A)
         onlyAllowedOperatorApproval(operator)
     {
         super.approve(operator, tokenId);
@@ -87,7 +87,7 @@ contract FlickDropNFT is
         address from,
         address to,
         uint256 tokenId
-    ) public payable override(ERC721A, IERC721A) onlyAllowedOperator(from) {
+    ) public payable override(IERC721A, ERC721A) onlyAllowedOperator(from) {
         super.transferFrom(from, to, tokenId);
     }
 
@@ -98,7 +98,7 @@ contract FlickDropNFT is
         address from,
         address to,
         uint256 tokenId
-    ) public payable override(ERC721A, IERC721A) onlyAllowedOperator(from) {
+    ) public payable override(IERC721A, ERC721A) onlyAllowedOperator(from) {
         super.safeTransferFrom(from, to, tokenId);
     }
 
@@ -110,16 +110,17 @@ contract FlickDropNFT is
         address to,
         uint256 tokenId,
         bytes memory data
-    ) public payable override(ERC721A, IERC721A) onlyAllowedOperator(from) {
+    ) public payable override(IERC721A, ERC721A) onlyAllowedOperator(from) {
         super.safeTransferFrom(from, to, tokenId, data);
     }
 
     function supportsInterface(
         bytes4 interfaceID
-    ) public view virtual override(ERC721A, IERC721A, ERC2981) returns (bool) {
+    ) public view virtual override(IERC721A, ERC2981, ERC721A) returns (bool) {
         return
             interfaceID == type(IERC721AQueryable).interfaceId ||
             super.supportsInterface(interfaceID);
+
     }
 
     receive() external payable {

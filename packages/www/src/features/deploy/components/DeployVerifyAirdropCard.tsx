@@ -103,7 +103,7 @@ const CardFormContent: FC<{
   } = useAirdrop(
     savedContractInfo.address,
     airdropAddresses,
-    state.status === "verified" || state.status === "airdropping"
+    ["verified", "airdropping", "verifying", "deploying"].includes(state.status)
   );
 
   useEffect(() => {
@@ -374,7 +374,7 @@ const CardFormContent: FC<{
           values.baseURI,
         ],
       });
-    } else if (state.status === "deployed") {
+    } else if (state.status === "deployed" || state.status === "deploying") {
       doVerify();
     } else if (state.status === "verified") {
       dispatch(actions.airdrop());
@@ -393,6 +393,10 @@ const CardFormContent: FC<{
     values.royaltiesAddress,
     values.royaltiesPercentage,
   ]);
+  const onAirdrop = useCallback(() => {
+    dispatch(actions.airdrop());
+    airdrop();
+  }, [airdrop]);
   const onReset = useCallback(() => {
     setSavedContractInfo({} as IDeployedContract);
     dispatch(actions.reset());
@@ -487,6 +491,9 @@ const CardFormContent: FC<{
           {state.status === "deployed" && "Verify"}
           {state.status === "verified" && "Airdrop"}
         </Button>
+        {airdrop && state.status !== "airdropped" && (
+          <Button onClick={onAirdrop}>Airdrop, skip verification</Button>
+        )}
         <Button onClick={onReset}>Reset</Button>
       </CardActions>
     </>

@@ -4,6 +4,7 @@
   "main": "index.ts",
   "license": "MIT",
   "devDependencies": {
+    "@typechain/ethers-v5": "^10.2.0",
     "@types/cli-progress": "^3.11.0",
     "@types/mime-types": "^2.1.1",
     "@types/node": "^18.8.3",
@@ -12,14 +13,17 @@
     "ethers": "^5.7.1",
     "prettier": "^2.7.1",
     "ts-node": "^10.9.1",
+    "typechain": "^8.1.1",
     "typescript": "^4.8.4"
   },
   "dependencies": {
+    "@ethersproject/experimental": "^5.7.0",
     "@giphy/js-fetch-api": "^4.4.0",
     "cli-progress": "^3.11.2",
     "commander": "^9.4.1",
     "csv-parse": "^5.3.1",
     "csv-stringify": "^6.2.1",
+    "eth-provider": "^0.13.6",
     "ipfs-core-types": "^0.13.0",
     "ipfs-http-client": "^59.0.0",
     "ipfs-unixfs": "^8.0.0",
@@ -31,6 +35,7 @@
   "scripts": {
     "build:cli": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
     "build:cli:silent": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
-    "cli": "yarn -s build:cli:silent && node dist/cli.mjs"
+    "cli": "yarn -s build:cli:silent && node dist/cli.mjs",
+    "dev": "yarn -s build:cli:silent && node --inspect dist/cli.mjs"
   }
 }
