@@ -3,6 +3,7 @@ import fs from "fs";
 import { stringify } from "csv-stringify";
 import { extension } from "mime-types";
 import { Subject, mergeMap, tap } from "rxjs";
+import cliProgress from "cli-progress";
 import {
   AssetEvent,
   CollectionAsset,
@@ -12,7 +13,11 @@ import {
 } from "../metadata";
 import { retryWithBackoff } from "../retry";
 import { URLSearchParams } from "url";
+import { Contract, providers, utils } from "ethers";
+import { Ierc721AFactory } from "../typechain/Ierc721AFactory";
 
+const MAINNET_OPENSEA_API = "https://api.opensea.io/api/v1";
+const TESTNET_OPENSEA_API = "https://testnets-api.opensea.io/api/v1";
 const GET_ASSETS = "https://api.opensea.io/api/v1/assets";
 
 interface OpenSeaPagination {
@@ -503,5 +508,236 @@ export async function updateOwnerOfMetadata({
         `Owner data mismatch for ${metadata.name} (${originalTokenId})`
       );
     }
+  }
+}
+
+export async function refreshOpenSeaMetadata({
+  collectionAddress,
+  from,
+  to,
+  apiKey,
+  testnet,
+  provider,
+}: {
+  collectionAddress: string;
+  apiKey: string;
+  testnet?: boolean;
+  from?: number;
+  to?: number;
+  provider: providers.Provider;
+}) {
+  // console.log({ collectionAddress, from, to, apiKey, testnet });
+  const incomingAssets = new Subject<{
+    tokenId: string;
+    contractAddress: string;
+  }>();
+  const progress = new cliProgress.MultiBar(
+    {
+      clearOnComplete: false,
+      hideCursor: true,
+    },
+    cliProgress.Presets.shades_classic
+  );
+
+  const refreshMetadataProgress = progress.create(
+    0,
+    0,
+    {
+      assetName: "Refreshing metadata",
+    },
+    {
+      format: "{bar} {percentage}% | {value}/{total} | {eta} | {assetName}",
+    }
+  );
+
+  let count = 0;
+  const finished = new Promise<void>((resolve, reject) => {
+    incomingAssets
+      .asObservable()
+      .pipe(
+        mergeMap(async (asset) => {
+          refreshMetadataProgress.increment();
+          const queryParameters = new URLSearchParams({
+            force_update: "true",
+          });
+          await retryWithBackoff(
+            async () => {
+              const response = await fetch(
+                `${testnet ? TESTNET_OPENSEA_API : MAINNET_OPENSEA_API}/asset/${
+                  asset.contractAddress
+                }/${asset.tokenId}?${queryParameters.toString()}`,
+                {
+                  headers: testnet
+                    ? {}
+                    : {
+                        "X-API-KEY": apiKey,
+                      },
+                }
+              );
+              if (response.status === 429) {
+                const retryAfter = parseInt(
+                  response.headers.get("retry-after") ?? "0"
+                );
+
+                if (retryAfter >= 0) {
+                  // progress.log(`Rate limited, retrying in ${retryAfter}s\n`);
+                  const lazyWaitProgress = progress.create(
+                    retryAfter + 1,
+                    0,
+                    {},
+                    {
+                      format: "{bar} | {eta} | Waiting for rate limit to reset",
+                    }
+                  );
+                  const countDown = setInterval(() => {
+                    if (
+                      lazyWaitProgress.getProgress() !==
+                      lazyWaitProgress.getTotal()
+                    ) {
+                      lazyWaitProgress.increment();
+                    }
+                  }, 1000);
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, (retryAfter + 1) * 1000)
+                  );
+                  clearInterval(countDown);
+                  lazyWaitProgress.stop();
+                  progress.remove(lazyWaitProgress);
+                }
+                throw new Error("Rate limited");
+              }
+              // let's ignore 404s for now
+              if (response.status !== 200) {
+                // console.log(
+                //   "\n\n",
+                //   JSON.stringify([...response.headers.entries()])
+                // );
+                throw new Error(
+                  `Failed to refresh metadata for ${asset.contractAddress}/${asset.tokenId} with status ${response.status}`
+                );
+              }
+            },
+            5,
+            1000
+          );
+        }, 1)
+      )
+      .subscribe({
+        complete() {
+          progress.log("Assets complete\n");
+          resolve();
+        },
+        error(err) {
+          reject(err);
+        },
+      });
+  });
+  // get collection details
+  // console.log(
+  //   JSON.stringify(
+  //     await retryWithBackoff(
+  //       async () => {
+  //         const url = `${
+  //           testnet ? TESTNET_OPENSEA_API : MAINNET_OPENSEA_API
+  //         }/collection/${collectionSlug}`;
+  //         const response = await fetch(url, {
+  //           headers: testnet
+  //             ? {}
+  //             : {
+  //                 "X-API-KEY": apiKey,
+  //               },
+  //         });
+  //         if (response.status === 429) {
+  //           const retryAfter = parseInt(
+  //             response.headers.get("retry-after") ?? "0"
+  //           );
+  //           if (retryAfter >= 0) {
+  //             // progress.log(`Rate limited, retrying in ${retryAfter}s\n`);
+  //             await new Promise((resolve) =>
+  //               setTimeout(resolve, (retryAfter + 1) * 1000)
+  //             );
+  //           }
+  //           throw new Error("Rate limited");
+  //         }
+  //         if (response.status !== 200) {
+  //           throw new Error(
+  //             `Failed to fetch collection details for ${collectionSlug} with status ${response.status} at ${url}`
+  //           );
+  //         }
+  //         return await response.json();
+  //       },
+  //       5,
+  //       1000
+  //     ),
+  //     null,
+  //     2
+  //   )
+  // );
+  // for await (const batchAssets of fetchWithPagination(async (next) => {
+  //   const queryParameters = new URLSearchParams({
+  //     collection: collectionSlug,
+  //     ...(next ? { cursor: next } : {}),
+  //   });
+
+  //   const response = await fetch(
+  //     `${
+  //       testnet ? TESTNET_OPENSEA_API : MAINNET_OPENSEA_API
+  //     }/assets?${queryParameters.toString()}`,
+  //     {
+  //       headers: testnet
+  //         ? {}
+  //         : {
+  //             "X-API-KEY": apiKey,
+  //           },
+  //     }
+  //   );
+  //   if (response.status === 429) {
+  //     const retryAfter = parseInt(response.headers.get("retry-after") ?? "0");
+  //     if (retryAfter >= 0) {
+  //       progress.log(`Rate limited, retrying in ${retryAfter}s\n`);
+  //       await new Promise((resolve) =>
+  //         setTimeout(resolve, (retryAfter + 1) * 1000)
+  //       );
+  //     }
+  //     throw new Error("Rate limited");
+  //   }
+
+  //   return (await response.json()) as GetAssetsResponse;
+  // })) {
+  //   count += batchAssets.assets?.length ?? 0;
+  //   refreshMetadataProgress.setTotal(count);
+  //   loadMetadataProgress.setTotal(count);
+  //   for (const asset of batchAssets.assets ?? []) {
+  //     incomingAssets.next(asset);
+  //     loadMetadataProgress.increment();
+  //   }
+  // }
+
+  from = from ?? 0;
+  if (!to) {
+    // get totalSupply from contract
+    const contract = Ierc721AFactory.connect(collectionAddress, provider);
+    to = (await contract.totalSupply()).toNumber();
+    // Check if there is a 0 token
+    try {
+      await contract.tokenURI(0);
+      to--;
+    } catch (err) {
+      // ignore
+    }
+  }
+  const total = to - from;
+  refreshMetadataProgress.setTotal(total);
+  for (let i = from; i < to; i++) {
+    incomingAssets.next({
+      tokenId: i.toString(),
+      contractAddress: collectionAddress,
+    });
+  }
+  incomingAssets.complete();
+  try {
+    await finished;
+  } catch (err) {
+    console.error(err);
   }
 }

@@ -42,6 +42,19 @@ export async function airdrop({
 
   // Connect to the network
   const provider = new providers.Web3Provider(ethProvider("frame") as any);
+  await provider.send("wallet_addEthereumChain", [
+    {
+      chainId: "0x89",
+      rpcUrls: ["https://rpc-mainnet.matic.network/"],
+      chainName: "Matic Mainnet",
+      nativeCurrency: {
+        name: "MATIC",
+        symbol: "MATIC",
+        decimals: 18,
+      },
+      blockExplorerUrls: ["https://polygonscan.com/"],
+    },
+  ]);
   const signer = provider.getSigner();
   const fromAddress = await signer.getAddress();
 
