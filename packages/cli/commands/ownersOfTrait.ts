@@ -43,6 +43,7 @@ export async function ownersOfTrait({
   // TODO, get token count on blockTag, and slice the metadata to equal that length....
 
   let tally: Tally = { traitCount: {} };
+
   const metadata = tokens
     .map((t) => ({
       attributes: t.metadata.attributes as IMetadataAttribute[],

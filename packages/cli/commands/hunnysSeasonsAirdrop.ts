@@ -35,6 +35,7 @@ interface IAirdropDetails {
   "Bunny Duke": string[];
   "Royal Bunny": string[];
   Relic: string[];
+  ["*"]: string[];
 }
 
 function noZeroAddress(address: string) {
@@ -56,6 +57,19 @@ export async function hunnysSeasonsAirdrop({
 }) {
   // Connect to the network
   const provider = new providers.Web3Provider(ethProvider("frame") as any);
+  await provider.send("wallet_addEthereumChain", [
+    {
+      chainId: "0x89",
+      rpcUrls: ["https://rpc-mainnet.matic.network/"],
+      chainName: "Matic Mainnet",
+      nativeCurrency: {
+        name: "MATIC",
+        symbol: "MATIC",
+        decimals: 18,
+      },
+      blockExplorerUrls: ["https://polygonscan.com/"],
+    },
+  ]);
   const signer = provider.getSigner();
   const fromAddress = await signer.getAddress();
 
@@ -79,26 +93,36 @@ export async function hunnysSeasonsAirdrop({
 
   // First convert the airdrop description into a series of token ids and destination addresses
   const airdropTxDetails = [
-    ...airdropDetails["Bunny"].filter(noZeroAddress).map((address) => ({
-      tokenId: startWithTokenId,
-      destinationAddress: address,
-    })),
-    ...airdropDetails["Bunny Knight"].filter(noZeroAddress).map((address) => ({
-      tokenId: startWithTokenId + 1,
-      destinationAddress: address,
-    })),
-    ...airdropDetails["Bunny Duke"].filter(noZeroAddress).map((address) => ({
-      tokenId: startWithTokenId + 2,
-      destinationAddress: address,
-    })),
-    ...airdropDetails["Royal Bunny"].filter(noZeroAddress).map((address) => ({
-      tokenId: startWithTokenId + 3,
-      destinationAddress: address,
-    })),
-    ...airdropDetails["Relic"].filter(noZeroAddress).map((address) => ({
-      tokenId: startWithTokenId + 4,
-      destinationAddress: address,
-    })),
+    ...[...airdropDetails["Bunny"], ...airdropDetails["*"]]
+      .filter(noZeroAddress)
+      .map((address) => ({
+        tokenId: startWithTokenId,
+        destinationAddress: address,
+      })),
+    ...[...airdropDetails["Bunny Knight"], ...airdropDetails["*"]]
+      .filter(noZeroAddress)
+      .map((address) => ({
+        tokenId: startWithTokenId + 1,
+        destinationAddress: address,
+      })),
+    ...[...airdropDetails["Bunny Duke"], ...airdropDetails["*"]]
+      .filter(noZeroAddress)
+      .map((address) => ({
+        tokenId: startWithTokenId + 2,
+        destinationAddress: address,
+      })),
+    ...[...airdropDetails["Royal Bunny"], ...airdropDetails["*"]]
+      .filter(noZeroAddress)
+      .map((address) => ({
+        tokenId: startWithTokenId + 3,
+        destinationAddress: address,
+      })),
+    ...[...airdropDetails["Relic"], ...airdropDetails["*"]]
+      .filter(noZeroAddress)
+      .map((address) => ({
+        tokenId: startWithTokenId + 4,
+        destinationAddress: address,
+      })),
   ];
   from(airdropTxDetails)
     .pipe(
@@ -111,7 +135,6 @@ export async function hunnysSeasonsAirdrop({
               currentBatch: acc.currentBatch + 1,
             };
           }
-          // For each batch entry, construct the calldata for the safeTransferFrom call
 
           const calldata = batch.map(({ tokenId, destinationAddress }) => {
             return contract.interface.encodeFunctionData("safeTransferFrom", [
@@ -125,16 +148,26 @@ export async function hunnysSeasonsAirdrop({
           // Create a multicall batch where any individual transaction can fail (for example, due to safeTransferFrom error)
           // but the whole batch will still be executed
           // now make the multicall
+
+          // First estimate the gas
+          const gasEstimate = await multicall.estimateGas.aggregate3(
+            calldata.map((c) => ({
+              allowFailure: true,
+              target: HunnysSeasonsContractAddress,
+              callData: c,
+            }))
+          );
           const receipt: providers.TransactionResponse = await retryWithBackoff(
             async () =>
               await multicall.aggregate3(
                 calldata.map((c) => ({
-                  allowFailure: false,
+                  allowFailure: true,
                   target: HunnysSeasonsContractAddress,
                   callData: c,
                 })),
                 {
                   gasPrice: (await provider.getGasPrice()).mul(2),
+                  gasLimit: gasEstimate.mul(8).div(7),
                 }
               ),
             2,
@@ -171,6 +204,9 @@ export async function hunnysSeasonsAirdrop({
     .subscribe({
       complete: () => {
         console.log("Airdrop complete");
+      },
+      error: (err) => {
+        console.log("Airdrop failed", err);
       },
     });
 }
