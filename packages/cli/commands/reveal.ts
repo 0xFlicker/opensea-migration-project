@@ -45,6 +45,8 @@ export async function revealMetadata({
   console.log(`Reveal up to: ${revealIndex}`);
   console.log(`Number of tokens to reveal: ${revealIndex - lastRevealedIndex}`);
 
+  // Take the block hash, turn it into a number, and mod it by the number of tokens to reveal
+  // We will use this number to shift the tokens
   const blockHashNumber = BigNumber.from(blockHash);
   const mod = blockHashNumber.mod(maxSupply - lastRevealedIndex);
   const shiftBy = mod.toNumber();

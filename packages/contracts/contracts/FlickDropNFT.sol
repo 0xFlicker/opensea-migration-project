@@ -120,7 +120,6 @@ contract FlickDropNFT is
         return
             interfaceID == type(IERC721AQueryable).interfaceId ||
             super.supportsInterface(interfaceID);
-
     }
 
     receive() external payable {
