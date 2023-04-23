@@ -17,10 +17,12 @@ import {
 } from "./commands/opensea";
 import fetch from "node-fetch";
 import { ipfsPin, ipfsPinSingle } from "./commands/ipfs-pin";
+import { ipfsPinBurnable } from "./commands/ipfs-pin-burnable";
 import { ownersOf } from "./commands/ownsersOf";
 import { hunnysSeasonsAirdropList } from "./commands/hunnysSeasonsAirdropPull";
 import { hunnysSeasonsAirdrop } from "./commands/hunnysSeasonsAirdrop";
 import { justReveal, revealMetadata } from "./commands/reveal";
+import { generateBurnableMetadata } from "./commands/metadataProcess";
 
 declare var global: any;
 global.fetch = fetch;
@@ -133,6 +135,7 @@ metadataCommands
   .option("--infura-ipfs-secret <infura-ipfs-secret>", "ipfs secret")
   .option("-r, --rpc <rpc-url>", "node url")
   .option("-b, --block <block>", "block number")
+  .option("--images", "download images")
   .action(
     async ({
       contract: contractAddress,
@@ -141,6 +144,7 @@ metadataCommands
       infuraIpfsSecret,
       rpc: rpcUrl,
       block,
+      images,
     }) => {
       const dotEnv = dotenv.config().parsed;
       const env = { ...process.env, ...dotEnv };
@@ -170,6 +174,7 @@ metadataCommands
         contract,
         ipfsClient,
         blockTag: block,
+        images,
       });
     }
   );
@@ -185,6 +190,21 @@ metadataCommands
       outputCsv: out,
       outputJson: outJson,
     });
+  });
+
+metadataCommands
+  .command("burnable")
+  .option("-i, --in-dir <inDir>", "input directory")
+  .option("-o, --out-dir <outDir>", "output directory")
+  .action(async ({ inDir, outDir }) => {
+    try {
+      await generateBurnableMetadata({
+        inDir,
+        outDir,
+      });
+    } catch (e) {
+      console.error(e);
+    }
   });
 
 metadataCommands
@@ -506,9 +526,14 @@ ipfsCommands
     "ipfs project id"
   )
   .option("--infura-ipfs-secret <infura-ipfs-secret>", "ipfs secret")
+  .option("--image-cid <imageCid>", "image cid")
   .option("--pin", "pin metadata")
+  .option("--burnable", "burnable metadata")
   .action(
-    async (inFolder, { ipfs, infuraIpfsProjectId, infuraIpfsSecret, pin }) => {
+    async (
+      inFolder,
+      { ipfs, infuraIpfsProjectId, infuraIpfsSecret, pin, burnable, imageCid }
+    ) => {
       const dotEnv = dotenv.config().parsed;
       const env = { ...process.env, ...dotEnv };
       infuraIpfsProjectId = infuraIpfsProjectId || env.INFURA_IPFS_PROJECT_ID;
@@ -529,11 +554,20 @@ ipfsCommands
         ...(ipfsBasicAuth ? { headers: { authorization: ipfsBasicAuth } } : {}),
       });
       try {
-        await ipfsPin({
-          ipfsClient,
-          localFolder: inFolder,
-          pin,
-        });
+        if (burnable) {
+          await ipfsPinBurnable({
+            ipfsClient,
+            localFolder: inFolder,
+            imageCid,
+            pin,
+          });
+        } else {
+          await ipfsPin({
+            ipfsClient,
+            localFolder: inFolder,
+            pin,
+          });
+        }
       } catch (e) {
         console.error(e);
       }

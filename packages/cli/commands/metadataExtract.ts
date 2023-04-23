@@ -4,18 +4,33 @@ import { IPFSHTTPClient } from "ipfs-http-client";
 import { catchError, map, mergeMap, of, range } from "rxjs";
 import fetch from "node-fetch";
 import { fileExists } from "../files.js";
-import { loadIpfsAsObservable, loadIpfsContent } from "../ipfs.js";
+import { loadIpfsContent } from "../ipfs.js";
 import { BigNumber } from "ethers";
 import { retryWithBackoff } from "../retry.js";
+import { basename } from "path";
+
+async function downloadImage(ipfsClient: IPFSHTTPClient, url: string) {
+  const urlObj = new URL(url);
+  if (urlObj.protocol === "ipfs:") {
+    const ipfsHash = url.slice(7);
+    const content = await loadIpfsContent(ipfsClient, ipfsHash);
+    return content;
+  }
+  const response = await fetch(url);
+  const content = await response.arrayBuffer();
+  return content;
+}
 
 export async function extractMetadata({
   contract,
   ipfsClient,
   blockTag,
+  images,
 }: {
   contract: IERC721A;
   ipfsClient: IPFSHTTPClient;
   blockTag: string | BigNumber;
+  images?: boolean;
 }) {
   const [contractName, tokenCount] = await Promise.all([
     contract.name(),
@@ -29,20 +44,25 @@ export async function extractMetadata({
     }),
   ]);
   console.log(`Found ${tokenCount} tokens in contract ${contractName}`);
-  await fs.promises.mkdir(`.metadata/${contractName}`, { recursive: true });
-  range(1, tokenCount.toNumber())
+  await fs.promises.mkdir(`.metadata/${contractName}/assets`, {
+    recursive: true,
+  });
+
+  range(0, tokenCount.toNumber() - 1)
     .pipe(
       mergeMap(async (tokenId) => {
         if (await fileExists(`.metadata/${contractName}/${tokenId}.json`)) {
+          const content = await fs.promises.readFile(
+            `.metadata/${contractName}/${tokenId}.json`,
+            "utf8"
+          );
+
           return {
             tokenId,
-            content: await fs.promises.readFile(
-              `.metadata/${contractName}/${tokenId}.json`,
-              "utf8"
-            ),
+            content,
           };
         }
-        const tokenURI = await retryWithBackoff(
+        const tokenURI: string = await retryWithBackoff(
           () => contract.tokenURI(tokenId),
           10,
           200
@@ -57,9 +77,6 @@ export async function extractMetadata({
             250
           );
           return { tokenId, content };
-          // return loadIpfsAsObservable(ipfsClient, ipfsHash)
-          //   .pipe(backOff(10, 250))
-          //   .pipe(map((content) => ({ tokenId, content })));
         }
         const response = await fetch(fetchURL);
         const content = await response.text();
@@ -73,6 +90,25 @@ export async function extractMetadata({
           content,
           "utf8"
         );
+        // check if we have the image
+        if (images) {
+          const metadata = JSON.parse(content);
+          const image = basename(metadata.image);
+          if (
+            metadata.image &&
+            !(await fileExists(`.metadata/${contractName}/assets/${image}`))
+          ) {
+            const imageContent = await downloadImage(
+              ipfsClient,
+              metadata.image
+            );
+            console.log(`Writing ${image}`);
+            await fs.promises.writeFile(
+              `.metadata/${contractName}/assets/${image}`,
+              Buffer.from(imageContent)
+            );
+          }
+        }
         return of({ tokenId, content: JSON.parse(content) });
       }, 2),
       catchError((error) => {

@@ -19,6 +19,7 @@
   "dependencies": {
     "@ethersproject/experimental": "^5.7.0",
     "@giphy/js-fetch-api": "^4.4.0",
+    "canvas": "^2.11.2",
     "cli-progress": "^3.11.2",
     "commander": "^9.4.1",
     "csv-parse": "^5.3.1",
@@ -30,11 +31,12 @@
     "it-glob": "^2.0.0",
     "mime-types": "^2.1.35",
     "node-fetch": "^3.2.10",
+    "ramda": "^0.29.0",
     "rxjs": "^7.5.7"
   },
   "scripts": {
-    "build:cli": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
-    "build:cli:silent": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --outfile=dist/cli.mjs",
+    "build:cli": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --external:canvas --outfile=dist/cli.mjs",
+    "build:cli:silent": "esbuild index.ts --log-level=silent  --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm  --bundle --target=node16.14 --external:ipfs-http-client --external:canvas --outfile=dist/cli.mjs",
     "cli": "yarn -s build:cli:silent && node dist/cli.mjs",
     "dev": "yarn -s build:cli:silent && node --inspect dist/cli.mjs"
   }
