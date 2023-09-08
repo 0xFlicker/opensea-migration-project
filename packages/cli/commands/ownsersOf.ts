@@ -43,10 +43,18 @@ export async function ownersOf({
     // nothing
   }
 
+  console.log(
+    `Found ${tokenLength} tokens starting at ${token0Exists ? 0 : 1}`
+  );
+
   const owners: string[] = [];
-  for (let i = token0Exists ? 0 : 1; i < tokenLength; i += 20) {
+  for (
+    let i = token0Exists ? 0 : 1;
+    i < (token0Exists ? tokenLength : tokenLength + 1);
+    i += 20
+  ) {
     const tokenIds = Array.from(
-      { length: Math.min(20, tokenLength - i + 1) },
+      { length: Math.min(20, tokenLength - i) },
       (_, j) => j + i
     );
     const ownerAddresses = await Promise.all(

@@ -180,9 +180,21 @@ export async function hunnysSeasonsAirdropList({
 
   const uniqueOwners = [...new Set(Object.values(seasonsAirdrop).flat())];
   console.log(`Found ${uniqueOwners.length} unique owners`);
+  console.log(`Found ${seasonsAirdrop["Bunny"].length} unique Bunny owners`);
+  console.log(
+    `Found ${seasonsAirdrop["Bunny Knight"].length} unique Bunny Knight owners`
+  );
+  console.log(
+    `Found ${seasonsAirdrop["Bunny Duke"].length} unique Bunny Duke owners`
+  );
+  console.log(
+    `Found ${seasonsAirdrop["Royal Bunny"].length} unique Royal Bunny owners`
+  );
+  console.log(`Found ${seasonsAirdrop["Relic"].length} unique OG owners`);
   await fs.promises.writeFile(
     output || `HunnysSeasonsAirdrop.txt`,
     JSON.stringify(seasonsAirdrop, null, 2),
     "utf8"
   );
+  process.exit(0);
 }

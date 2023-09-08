@@ -167,7 +167,7 @@ export async function generateBurnableMetadata({
           },
           {
             trait_type: "OG Rank",
-            value: rankingMap.get(i + 1)!,
+            value: rankingMap.get(i)!,
           },
         ],
         image: `burned/${basename(metadata.image)}`,

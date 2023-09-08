@@ -520,12 +520,12 @@ ipfsCommands
 
 ipfsCommands
   .command("pin-metadata <folder>")
-  .option("-i, --ipfs <ipfs>", "ipfs url")
-  .option(
-    "--infura-ipfs-project-id <infura-ipfs-project-id>",
-    "ipfs project id"
-  )
-  .option("--infura-ipfs-secret <infura-ipfs-secret>", "ipfs secret")
+  // .option("-i, --ipfs <ipfs>", "ipfs url")
+  // .option(
+  //   "--infura-ipfs-project-id <infura-ipfs-project-id>",
+  //   "ipfs project id"
+  // )
+  // .option("--infura-ipfs-secret <infura-ipfs-secret>", "ipfs secret")
   .option("--image-cid <imageCid>", "image cid")
   .option("--pin", "pin metadata")
   .option("--burnable", "burnable metadata")
@@ -536,37 +536,38 @@ ipfsCommands
     ) => {
       const dotEnv = dotenv.config().parsed;
       const env = { ...process.env, ...dotEnv };
-      infuraIpfsProjectId = infuraIpfsProjectId || env.INFURA_IPFS_PROJECT_ID;
-      infuraIpfsSecret = infuraIpfsSecret || env.INFURA_IPFS_SECRET;
-      ipfs = ipfs || env.IPFS_API_URL;
+      const web3StorageApiKey = env.WEB3_STORAGE_API_KEY;
+      // infuraIpfsProjectId = infuraIpfsProjectId || env.INFURA_IPFS_PROJECT_ID;
+      // infuraIpfsSecret = infuraIpfsSecret || env.INFURA_IPFS_SECRET;
+      // ipfs = ipfs || env.IPFS_API_URL;
 
-      let ipfsBasicAuth: string | null = null;
-      if (infuraIpfsProjectId && infuraIpfsSecret) {
-        ipfsBasicAuth = `Basic ${Buffer.from(
-          `${infuraIpfsProjectId}:${infuraIpfsSecret}`
-        ).toString("base64")}`;
-      }
-      const ipfsUrl = new URL(ipfs || "https://ipfs.infura.io:5001");
-      const ipfsClient = createIpfsHttpClient({
-        host: ipfsUrl.hostname,
-        protocol: ipfsUrl.protocol.replace(":", ""),
-        port: Number(ipfsUrl.port),
-        ...(ipfsBasicAuth ? { headers: { authorization: ipfsBasicAuth } } : {}),
-      });
+      // let ipfsBasicAuth: string | null = null;
+      // if (infuraIpfsProjectId && infuraIpfsSecret) {
+      //   ipfsBasicAuth = `Basic ${Buffer.from(
+      //     `${infuraIpfsProjectId}:${infuraIpfsSecret}`
+      //   ).toString("base64")}`;
+      // }
+      // const ipfsUrl = new URL(ipfs || "https://ipfs.infura.io:5001");
+      // const ipfsClient = createIpfsHttpClient({
+      //   host: ipfsUrl.hostname,
+      //   protocol: ipfsUrl.protocol.replace(":", ""),
+      //   port: Number(ipfsUrl.port),
+      //   ...(ipfsBasicAuth ? { headers: { authorization: ipfsBasicAuth } } : {}),
+      // });
       try {
         if (burnable) {
           await ipfsPinBurnable({
-            ipfsClient,
+            accessToken: web3StorageApiKey!,
             localFolder: inFolder,
             imageCid,
             pin,
           });
         } else {
-          await ipfsPin({
-            ipfsClient,
-            localFolder: inFolder,
-            pin,
-          });
+          // await ipfsPin({
+          //   ipfsClient,
+          //   localFolder: inFolder,
+          //   pin,
+          // });
         }
       } catch (e) {
         console.error(e);
